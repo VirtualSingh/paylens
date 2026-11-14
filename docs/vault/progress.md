@@ -12,7 +12,8 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Current state (as of 2026-11-14 night)
 
-- Phase 0 in progress: 0.0 (machine) and 0.1 (docs-first commits, hygiene files) done.
+- Phase 0 in progress: 0.0 (machine), 0.1 (docs-first commits) and 0.2 (Nx workspace,
+  strict TS, lint boundaries, commit hooks) done. Next: 0.3 first TDD cycles.
 - Repo: https://github.com/VirtualSingh/paylens (public), working directly on `main`.
 - MCP servers (vercel, neon, nx-mcp) are in `.mcp.json` but load only after a Claude Code
   restart — requested together with the Vercel/Neon browser logins at task 0.6.
@@ -24,8 +25,8 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Now (next 3 steps)
 
-1. Phase 0 · 0.2 — Nx workspace (api, web, web-e2e, domain, shared), strict TS, lint, hooks.
-2. Phase 0 · 0.3 — first TDD cycles (Money.add, PaginationQuerySchema, health, shell, PGlite).
+1. Phase 0 · 0.3 — first TDD cycles (Money.add, PaginationQuerySchema, health, shell, PGlite).
+2. Phase 0 · 0.4–0.5 — local infra + `.env.example`; CI with security scans.
 3. Phase 0 · 0.6 — walking skeleton on Vercel + Neon; record URLs here.
 
 ## Next (this phase)
@@ -64,6 +65,11 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
   reviewer sees.
 - 2026-11-14 · MCP restart deferred from 0.0 to 0.6: only 0.6 needs Vercel/Neon, so the
   restart and both browser logins become one interruption instead of two.
+- 2026-11-14 · Nx 24 (not 23 as planned — current release). API on NestJS 12 as ESM built with
+  plain `tsc` (mirrors the official `nest new` v12 template); the Nx generator's Nest 11 +
+  webpack/CommonJS output was replaced. ESLint stays on 9 (what Nx 24's plugins support).
+- 2026-11-14 · Pre-commit runs lint + typecheck + test for affected projects (not just lint):
+  "every commit must build and pass tests" is enforced, not hoped for.
 
 ## Blockers
 
@@ -84,7 +90,9 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
   git 2.37.0 · gh 2.102.0 (logged in as VirtualSingh) · vercel 65.16.0 · neon 9.5.0 ·
   Docker: absent · Claude Code 2.1.325 (VS Code extension).
 - MCP (project scope, `.mcp.json`): vercel (http), neon (http), nx-mcp (stdio via `cmd /c npx`).
-- Versions pinned at scaffold time: _record here_ (Nx, Nest, React/Angular, Drizzle, Mastra).
+- Scaffold (0.2): Nx 24.0.0 · NestJS 12.5.0 · React 19.3.1 · Vite 8.3.8 · Vitest 5.0.5 ·
+  TypeScript 6.0.3 · ESLint 9.39.5 + typescript-eslint 8.72.2 · Playwright 1.65.0 ·
+  Prettier 3.10.1. Later: Drizzle, Mastra (record when added).
 
 ## Log files
 
