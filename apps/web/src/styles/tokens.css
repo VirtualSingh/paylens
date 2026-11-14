@@ -1,0 +1,43 @@
+/*
+ * PayLens design tokens — the single source of truth is docs/vault/design/ui.md.
+ * Tailwind v4 turns every `--color-*`, `--text-*`, `--radius-*` and `--font-*` variable
+ * below into utilities (`bg-paper`, `text-ink`, `text-base`, `rounded-md` …).
+ */
+@theme {
+  /* Core palette */
+  --color-ink: #1b2a41; /* text, primary buttons, chart axes */
+  --color-paper: #f6f8f7; /* app background */
+  --color-surface: #ffffff; /* tables, sheets, cards (sparingly) */
+  --color-line: #d9e1df; /* 1 px borders and dividers */
+  --color-teal: #157a6e; /* primary action, links, focus ring, "within band" */
+  --color-teal-soft: #ddefeb; /* selected rows, highlights, band track */
+
+  /* Semantic */
+  --color-below: #b7791f; /* below band — attention, not alarm */
+  --color-below-soft: #f6e7c8;
+  --color-above: #6b3fa0; /* above band */
+  --color-above-soft: #e9dff5;
+  --color-danger: #b3261e;
+  --color-muted: #5c6b7a; /* secondary text, 5.4:1 on paper */
+
+  /* Typography: one family, self-hosted (see main.tsx) */
+  --font-sans: 'IBM Plex Sans Variable', system-ui, sans-serif;
+
+  /*
+   * Type scale from ui.md: 12 · 13 · 14 (UI body) · 16 · 20 · 24 · 30 · 38 px.
+   * Tailwind's default scale is replaced so `text-base` is the 14 px UI body.
+   */
+  --text-*: initial;
+  --text-xs: 0.75rem; /* 12 */
+  --text-sm: 0.8125rem; /* 13 */
+  --text-base: 0.875rem; /* 14 — UI body */
+  --text-md: 1rem; /* 16 */
+  --text-lg: 1.25rem; /* 20 */
+  --text-xl: 1.5rem; /* 24 */
+  --text-2xl: 1.875rem; /* 30 */
+  --text-3xl: 2.375rem; /* 38 */
+
+  /* Radii: 6 px controls, 10 px sheets and dialogs, full for chips (`rounded-full`) */
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
