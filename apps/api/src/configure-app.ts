@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
+import helmet from 'helmet';
 import { requestIdMiddleware } from './common/request-id.middleware.js';
 
 /**
@@ -7,6 +8,19 @@ import { requestIdMiddleware } from './common/request-id.middleware.js';
  */
 export function configureApp(app: INestApplication): INestApplication {
   app.use(requestIdMiddleware);
+  app.use(
+    // Helmet's defaults (HSTS, nosniff, no x-powered-by, CSP default-src 'self'), tightened
+    // per security.md: nobody may frame us, and styles may not be inline either.
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          frameAncestors: ["'none'"],
+          styleSrc: ["'self'"],
+        },
+      },
+      frameguard: { action: 'deny' },
+    }),
+  );
   app.setGlobalPrefix('api/v1');
   return app;
 }
