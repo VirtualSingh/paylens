@@ -21,6 +21,12 @@ describe('PaginationQuerySchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('defaults to the first page of 50 when nothing is given', () => {
+    const result = PaginationQuerySchema.parse({});
+
+    expect(result).toEqual({ page: 1, pageSize: 50 });
+  });
+
   it('accepts the largest page size, 100', () => {
     const result = PaginationQuerySchema.parse({ page: '1', pageSize: '100' });
 
