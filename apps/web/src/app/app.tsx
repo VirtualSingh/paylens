@@ -1,13 +1,10 @@
-// Uncomment this line to use CSS modules
-// import styles from './app.module.css';
-import NxWelcome from './nx-welcome';
+import { AppShell } from './app-shell';
 
 export function App() {
   return (
-    <div>
-      <NxWelcome title="web" />
-    </div>
+    <AppShell>
+      <h1 className="text-xl">How ACME pays people</h1>
+      <p className="mt-1 text-muted">The dashboard is being built.</p>
+    </AppShell>
   );
 }
-
-export default App;
