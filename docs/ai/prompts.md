@@ -43,3 +43,16 @@ Template:
 - Notable proposal rejected by the agent itself (and why): …
 - Commits: <range>
 ```
+
+## 2026-11-14/15 · Claude Code (Opus) · Phase 0 · tasks 0.0–0.5
+- Prompt used: the kickoff prompt in `docs/ai/kickoff-prompt.md`, pasted as-is; later
+  "continue" and "record the current progress and stop … we'll start again in a few hours".
+- **Rejected by Pushpendra:** the agent appended `Co-Authored-By: Claude …` to every commit
+  (its default attribution). Pushpendra asked for no trailer — the history is his artefact.
+  Kept on the first ~45 commits because removing it needs a history rewrite (CLAUDE.md forbids).
+- Rejected by the agent itself: the Nx Nest generator's NestJS 11 + webpack/CommonJS build →
+  NestJS 12 ESM with plain tsc (ADR-011); `vitest-axe` (unmaintained) → axe-core directly;
+  shadcn `nova` preset defaults (Geist font, grey and dark palettes, sample Button) → ui.md tokens.
+- Plan deviations the agent took and recorded: MCP restart moved from 0.0 to 0.6; shadcn
+  primitives added on first use instead of eight up front; Node 24 instead of 22.
+- Commits: e3e0353 … 176bf53 (+ this wrap-up).
