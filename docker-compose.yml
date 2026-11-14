@@ -1,0 +1,23 @@
+# Local Postgres for `pnpm dev` (tests do not need it: they use PGlite in-process).
+#   docker compose up -d db   →   pnpm db:migrate   →   pnpm dev
+# Extensions (btree_gist, citext, pg_trgm) are enabled by the first migration, exactly as
+# on Neon, so there is no init script. Credentials are local-only and match .env.example.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: paylens
+      POSTGRES_PASSWORD: paylens
+      POSTGRES_DB: paylens
+    ports:
+      - '5432:5432'
+    volumes:
+      - paylens-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U paylens -d paylens']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  paylens-db:
