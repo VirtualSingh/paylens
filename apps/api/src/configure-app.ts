@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import helmet from 'helmet';
+import { ProblemDetailsFilter } from './common/problem-details.filter.js';
 import { requestIdMiddleware } from './common/request-id.middleware.js';
 
 /**
@@ -22,5 +23,6 @@ export function configureApp(app: INestApplication): INestApplication {
     }),
   );
   app.setGlobalPrefix('api/v1');
+  app.useGlobalFilters(new ProblemDetailsFilter());
   return app;
 }
