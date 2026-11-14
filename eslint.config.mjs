@@ -3,7 +3,12 @@ import security from 'eslint-plugin-security';
 import tseslint from 'typescript-eslint';
 
 const typeScriptFiles = ['**/*.ts', '**/*.tsx', '**/*.cts', '**/*.mts'];
-const testFiles = ['**/*.spec.ts', '**/*.spec.tsx', '**/testing/**/*.ts'];
+const testFiles = [
+  '**/*.spec.ts',
+  '**/*.spec.tsx',
+  '**/*.e2e-spec.ts',
+  '**/testing/**/*.ts',
+];
 
 export default [
   ...nx.configs['flat/base'],

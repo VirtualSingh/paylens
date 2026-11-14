@@ -8,7 +8,7 @@ export default defineConfig(() => ({
     watch: false,
     globals: true,
     environment: 'node',
-    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: ['src/**/*.spec.ts', 'src/**/*.e2e-spec.ts'],
     passWithNoTests: true,
     reporters: ['default'],
     coverage: {
