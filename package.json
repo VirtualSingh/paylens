@@ -9,7 +9,10 @@
     "typecheck": "nx run-many -t typecheck",
     "test": "nx run-many -t test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --dir apps/api exec drizzle-kit generate",
+    "db:migrate": "pnpm --dir apps/api exec drizzle-kit migrate",
+    "db:seed": "node apps/api/src/db/seed.ts"
   },
   "private": true,
   "dependencies": {
