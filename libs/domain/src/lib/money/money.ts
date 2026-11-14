@@ -16,6 +16,17 @@ export class Money {
   }
 
   add(other: Money): Money {
+    if (other.currency !== this.currency) {
+      throw new CurrencyMismatchError(this.currency, other.currency);
+    }
     return new Money(this.amountMinor + other.amountMinor, this.currency);
+  }
+}
+
+/** Amounts in different currencies cannot be combined without an FX conversion. */
+export class CurrencyMismatchError extends Error {
+  constructor(left: CurrencyCode, right: CurrencyCode) {
+    super(`Cannot combine ${left} with ${right} without converting first`);
+    this.name = 'CurrencyMismatchError';
   }
 }
