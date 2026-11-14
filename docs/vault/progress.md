@@ -1,6 +1,6 @@
 ---
 title: Progress — rolling window (keep ≤ 120 lines; details go to progress/log-*.md)
-updated: 2026-11-14
+updated: 2026-11-15
 status: active
 ---
 
@@ -10,28 +10,29 @@ Read this first every session. Keep it short: what is true now, what is next, wh
 blocked, what needs a human. Move detail to the dated log. When this file passes 120 lines,
 archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
-## Current state (as of 2026-11-14 night)
+## Current state (as of 2026-11-15, early morning)
 
-- Phase 0 in progress: 0.0 (machine), 0.1 (docs-first commits) and 0.2 (Nx workspace,
-  strict TS, lint boundaries, commit hooks) done. Next: 0.3 first TDD cycles.
+- Phase 0 in progress: 0.0–0.3 done (machine, docs-first commits, Nx workspace, first TDD
+  cycles in every project). Next: 0.4 local infra, 0.5 CI, then 0.6 deploy.
 - Repo: https://github.com/VirtualSingh/paylens (public), working directly on `main`.
 - MCP servers (vercel, neon, nx-mcp) are in `.mcp.json` but load only after a Claude Code
   restart — requested together with the Vercel/Neon browser logins at task 0.6.
 - Deployed: nothing yet. Phase 0 ends with a deployed walking skeleton.
 - Frontend framework: **React (default)**. Recruiter asked whether Angular is acceptable;
   answer expected 2026-11-15. If allowed, switch per ADR-003 before Phase 2.3.
-- Test runner: Vitest everywhere (NestJS 12 default). DB in tests: PGlite — verify
-  `btree_gist` support in Phase 0 task 0.3 before relying on it.
+- Tests: domain 2 · shared 11 · api 20 (incl. PGlite) · web 10 · 1 Playwright smoke — all green.
+  PGlite loads btree_gist/citext/pg_trgm and enforces exclusion constraints (risk retired).
+- Known issue: api suite ~22 s wall clock (Nest import time × parallel files); target < 20 s.
 
 ## Now (next 3 steps)
 
-1. Phase 0 · 0.3 — first TDD cycles (Money.add, PaginationQuerySchema, health, shell, PGlite).
-2. Phase 0 · 0.4–0.5 — local infra + `.env.example`; CI with security scans.
-3. Phase 0 · 0.6 — walking skeleton on Vercel + Neon; record URLs here.
+1. Phase 0 · 0.4 — `.env.example`, docker-compose, `pnpm dev`, Vite proxy, Drizzle config + db scripts.
+2. Phase 0 · 0.5 — CI (lint/typecheck/test/build/security), actions pinned to SHAs.
+3. Phase 0 · 0.6 — restart Claude Code + Vercel/Neon logins, then deploy; record URLs here.
 
 ## Next (this phase)
 
-- 0.4 local infra and `.env.example`; 0.5 CI with security scans.
+- Bring the api test suite under 20 s (shared PGlite template or fewer Nest boots).
 
 ## Later (next phase)
 
@@ -66,10 +67,19 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 - 2026-11-14 · MCP restart deferred from 0.0 to 0.6: only 0.6 needs Vercel/Neon, so the
   restart and both browser logins become one interruption instead of two.
 - 2026-11-14 · Nx 24 (not 23 as planned — current release). API on NestJS 12 as ESM built with
-  plain `tsc` (mirrors the official `nest new` v12 template); the Nx generator's Nest 11 +
-  webpack/CommonJS output was replaced. ESLint stays on 9 (what Nx 24's plugins support).
+  plain `tsc` (ADR-011); the generator's Nest 11 + webpack/CommonJS output was replaced.
+  ESLint stays on 9 (what Nx 24's plugins support).
 - 2026-11-14 · Pre-commit runs lint + typecheck + test for affected projects (not just lint):
   "every commit must build and pass tests" is enforced, not hoped for.
+- 2026-11-15 · DB driver: `pg` (node-postgres) + Drizzle over Neon's pooled URL, 5 s
+  statement_timeout; tests inject PGlite behind the same `Database` type (DATABASE token).
+- 2026-11-15 · a11y tests call axe-core directly (5-line helper) instead of vitest-axe,
+  which has had no release since 2022.
+- 2026-11-15 · shadcn/ui initialised (config, `@/` alias, cn, colours mapped onto ui.md
+  tokens) but primitives are added with their first feature, not all eight in Phase 0 —
+  no unused, untested vendored code in the history.
+- 2026-11-15 · 5xx responses never carry the exception message; logs keep stack frames but
+  drop the message line (it can quote emails or connection strings).
 
 ## Blockers
 
@@ -92,8 +102,10 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 - MCP (project scope, `.mcp.json`): vercel (http), neon (http), nx-mcp (stdio via `cmd /c npx`).
 - Scaffold (0.2): Nx 24.0.0 · NestJS 12.5.0 · React 19.3.1 · Vite 8.3.8 · Vitest 5.0.5 ·
   TypeScript 6.0.3 · ESLint 9.39.5 + typescript-eslint 8.72.2 · Playwright 1.65.0 ·
-  Prettier 3.10.1. Later: Drizzle, Mastra (record when added).
+  Prettier 3.10.1. Added in 0.3: Zod 4.6 · Drizzle 0.45.4 · pg 8.23 · PGlite 0.5.16 ·
+  helmet 8.3 · @nestjs/swagger 12.1 · Tailwind 4.3.5 · shadcn 4.23 (radix-nova). Later: Mastra.
 
 ## Log files
 
-- [progress/log-2026-11-14.md](progress/log-2026-11-14.md) — planning session
+- [progress/log-2026-11-14.md](progress/log-2026-11-14.md) — planning session; build session 0.0–0.2
+- [progress/log-2026-11-15.md](progress/log-2026-11-15.md) — build session 0.3 onwards
