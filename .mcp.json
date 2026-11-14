@@ -11,12 +11,7 @@
     "nx-mcp": {
       "type": "stdio",
       "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "nx-mcp@latest"
-      ],
+      "args": ["/c", "npx", "-y", "nx-mcp@latest"],
       "env": {}
     }
   }
