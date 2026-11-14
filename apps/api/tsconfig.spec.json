@@ -20,7 +20,7 @@
     "src/**/*.test.ts",
     "src/**/*.spec.ts",
     "src/**/*.e2e-spec.ts",
-    "src/testing/**/*.ts",
+    "src/**/testing/**/*.ts",
     "src/**/*.test.tsx",
     "src/**/*.spec.tsx",
     "src/**/*.test.js",
