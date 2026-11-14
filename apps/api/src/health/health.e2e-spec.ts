@@ -1,8 +1,8 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from '../app/app.module.js';
-import { configureApp } from '../app/configure-app.js';
+import { AppModule } from '../app.module.js';
+import { configureApp } from '../configure-app.js';
 
 describe('GET /api/v1/health', () => {
   let app: INestApplication;
