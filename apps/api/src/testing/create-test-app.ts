@@ -6,6 +6,8 @@ import { configureApp } from '../configure-app.js';
 export interface TestAppOptions {
   /** Extra controllers mounted next to the real ones, e.g. a route that throws on purpose. */
   readonly controllers?: Type<unknown>[];
+  /** Serve OpenAPI docs; off by default, as in production. */
+  readonly docs?: boolean;
 }
 
 /** The real AppModule with the production configuration, ready for supertest. */
@@ -16,7 +18,9 @@ export async function createTestApp(
     imports: [AppModule],
     controllers: options.controllers ?? [],
   }).compile();
-  const app = configureApp(moduleRef.createNestApplication());
+  const app = configureApp(moduleRef.createNestApplication(), {
+    docs: options.docs ?? false,
+  });
   await app.init();
   return app;
 }
