@@ -18,7 +18,7 @@
   --color-above: #6b3fa0; /* above band */
   --color-above-soft: #e9dff5;
   --color-danger: #b3261e;
-  --color-muted: #5c6b7a; /* secondary text, 5.4:1 on paper */
+  /* ui.md's `muted` (#5C6B7A, secondary text, 5.4:1 on paper) is `muted-foreground` below. */
 
   /* Typography: one family, self-hosted (see main.tsx) */
   --font-sans: 'IBM Plex Sans Variable', system-ui, sans-serif;
@@ -38,6 +38,34 @@
   --text-3xl: 2.375rem; /* 38 */
 
   /* Radii: 6 px controls, 10 px sheets and dialogs, full for chips (`rounded-full`) */
+  --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
+  --radius-xl: 14px;
+}
+
+/*
+ * shadcn/ui components are written against semantic names (bg-primary, border-input,
+ * ring-ring …). Mapping those names onto the palette above makes every shadcn primitive
+ * wear PayLens colours without editing the components.
+ */
+@theme inline {
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-ink);
+  --color-primary: var(--color-ink);
+  --color-primary-foreground: var(--color-surface);
+  --color-secondary: var(--color-teal-soft);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-paper); /* shadcn: a subtle background */
+  --color-muted-foreground: #5c6b7a; /* ui.md: `muted` text */
+  --color-accent: var(--color-teal-soft);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-danger);
+  --color-border: var(--color-line);
+  --color-input: var(--color-line);
+  --color-ring: var(--color-teal);
 }

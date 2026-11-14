@@ -15,6 +15,8 @@ export default defineConfig(() => ({
     port: 4300,
     host: 'localhost',
   },
+  // `@/…` imports resolve through the "paths" in tsconfig (shadcn/ui expects this alias).
+  resolve: { tsconfigPaths: true },
   plugins: [react(), tailwindcss(), nxReadySignal()],
   // Uncomment this if you are using workers.
   // worker: {

@@ -1,15 +1,27 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+/* Variants shadcn/ui components rely on (data-open:, data-disabled: …). */
+@import 'shadcn/tailwind.css';
 @import './tokens.css';
 
+/*
+ * shadcn components ship `dark:` classes. Dark mode is not built in v1 (ui.md → F-36), so
+ * they only apply under a `.dark` ancestor, which nothing sets yet.
+ */
+@custom-variant dark (&:is(.dark *));
+
 @layer base {
+  * {
+    @apply border-border;
+  }
+
   html {
     font-family: var(--font-sans);
-    font-size: 100%;
   }
 
   body {
-    background-color: var(--color-paper);
-    color: var(--color-ink);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-size: var(--text-base);
     line-height: 1.5;
   }
