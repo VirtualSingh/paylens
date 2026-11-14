@@ -10,10 +10,12 @@ Read this first every session. Keep it short: what is true now, what is next, wh
 blocked, what needs a human. Move detail to the dated log. When this file passes 120 lines,
 archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
-## Current state (as of 2026-11-14 evening)
+## Current state (as of 2026-11-14 night)
 
-- Planning complete: product, design and plan written; vault created. No code yet.
-- Repo: to be created by Pushpendra on GitHub (empty); then the vault is the first commit.
+- Phase 0 in progress: 0.0 (machine) and 0.1 (docs-first commits, hygiene files) done.
+- Repo: https://github.com/VirtualSingh/paylens (public), working directly on `main`.
+- MCP servers (vercel, neon, nx-mcp) are in `.mcp.json` but load only after a Claude Code
+  restart — requested together with the Vercel/Neon browser logins at task 0.6.
 - Deployed: nothing yet. Phase 0 ends with a deployed walking skeleton.
 - Frontend framework: **React (default)**. Recruiter asked whether Angular is acceptable;
   answer expected 2026-11-15. If allowed, switch per ADR-003 before Phase 2.3.
@@ -22,8 +24,8 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Now (next 3 steps)
 
-1. Phase 0 · 0.0 — bootstrap the machine (Node, pnpm, git identity, GitHub repo) and record versions below.
-2. Phase 0 · 0.1–0.3 — commit vault + requirements doc (docs before code), Nx workspace, first TDD cycles.
+1. Phase 0 · 0.2 — Nx workspace (api, web, web-e2e, domain, shared), strict TS, lint, hooks.
+2. Phase 0 · 0.3 — first TDD cycles (Money.add, PaginationQuerySchema, health, shell, PGlite).
 3. Phase 0 · 0.6 — walking skeleton on Vercel + Neon; record URLs here.
 
 ## Next (this phase)
@@ -41,8 +43,8 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 | D-1 | Frontend: React vs Angular | React | Pushpendra (recruiter) | 2026-11-15 |
 | D-2 | Gender in data model for pay-gap (F-22) | Include, optional field, suppression n<5 | Pushpendra | 2026-11-15 |
 | D-3 | Assistant model for the demo: Claude Haiku (~$5) vs Gemini Flash-Lite (free) | Provider-neutral code; demo on Gemini Flash-Lite if no key is funded by Phase 4 | Pushpendra | 2026-11-17 |
-| D-4 | Repo public or private | Public | Pushpendra | 2026-11-15 |
-| D-5 | Commit directly to `main` with CI vs PR flow | `main` with CI (history is the artefact) | Pushpendra | 2026-11-15 |
+| ~~D-4~~ | ~~Repo public or private~~ — answered: Pushpendra created the repo public | Public | Pushpendra | 2026-11-15 |
+| D-5 | Commit directly to `main` with CI vs PR flow (working on `main` meanwhile; switching later costs nothing) | `main` with CI (history is the artefact) | Pushpendra | 2026-11-15 |
 
 ## Decisions taken (short; ADR has the reasoning)
 
@@ -53,10 +55,21 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 - 2026-11-14 · Vitest + PGlite + TDD cadence. ADR-007.
 - 2026-11-14 · Assistant: Mastra, tools-only, aggregate-first, evals in CI. ADR-009.
 - 2026-11-14 · Out of scope list incl. micro-frontends and Chrome extension. ADR-010.
+- 2026-11-14 · D-4 public: the repo already existed as public (`VirtualSingh/paylens`).
+- 2026-11-14 · Node 24 everywhere (`.nvmrc`, CI, Vercel), not 22: design.md says "22 LTS+";
+  24 is already installed, is Vercel's default runtime and is supported longer.
+- 2026-11-14 · `neon` CLI 9.x instead of `neonctl`: it is the successor (same commands) and
+  was already installed globally; installing `neonctl` would clash on the `neon` shim.
+- 2026-11-14 · Requirements doc committed *before* the vault so it is the first commit a
+  reviewer sees.
+- 2026-11-14 · MCP restart deferred from 0.0 to 0.6: only 0.6 needs Vercel/Neon, so the
+  restart and both browser logins become one interruption instead of two.
 
 ## Blockers
 
-- None. (GitHub repo, Vercel and Neon accounts needed before 0.1 / 0.6.)
+- Docker not installed (admin install): https://docs.docker.com/desktop/setup/install/windows-install/
+  Needed for the local `docker compose` Postgres (0.4 can be written without it) and as the
+  test fallback only if PGlite lacks an extension. Not blocking today.
 
 ## Review notes from Pushpendra (agent addresses these first)
 
@@ -66,7 +79,12 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 - Live URLs: web = _tbd_, api = _tbd_. Vercel project ids: _tbd_. Neon project: _tbd_.
 - Seed timing: local _tbd_, Neon _tbd_.
-- Versions pinned at scaffold time: _record here_ (Node, pnpm, Nx, Nest, React/Angular, Drizzle, Mastra).
+- Machine (0.0): Windows 11 Home 10.0.26200 · Git Bash + PowerShell 5.1 · Node 24.21.0 ·
+  npm 11.19.0 · pnpm 12.18.0 (npm -g; corepack needs admin to write into Program Files) ·
+  git 2.37.0 · gh 2.102.0 (logged in as VirtualSingh) · vercel 65.16.0 · neon 9.5.0 ·
+  Docker: absent · Claude Code 2.1.325 (VS Code extension).
+- MCP (project scope, `.mcp.json`): vercel (http), neon (http), nx-mcp (stdio via `cmd /c npx`).
+- Versions pinned at scaffold time: _record here_ (Nx, Nest, React/Angular, Drizzle, Mastra).
 
 ## Log files
 
