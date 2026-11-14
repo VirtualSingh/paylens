@@ -50,3 +50,29 @@ describe('GET /api/v1/health/ready', () => {
     });
   });
 });
+
+describe('GET /api/v1/health/ready without a database', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const unreachable = await createTestDatabase();
+    await unreachable.close();
+    app = await createTestApp({ database: drizzle(unreachable) });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('is not ready, so traffic is not routed to it', async () => {
+    const response = await request(app.getHttpServer()).get(
+      '/api/v1/health/ready',
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.body).toEqual({
+      status: 'unavailable',
+      checks: { database: 'down' },
+    });
+  });
+});
