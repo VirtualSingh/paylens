@@ -1,0 +1,26 @@
+name: Set up PayLens
+description: >
+  pnpm (version from package.json "packageManager"), Node (from .nvmrc), the pnpm store
+  and Nx caches, then a frozen-lockfile install. Shared by every CI job.
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+
+    # Nx stores task results in .nx/cache; restoring it lets unchanged projects skip work.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .nx/cache
+        key: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+        restore-keys: |
+          nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
