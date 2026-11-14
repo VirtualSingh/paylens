@@ -44,3 +44,15 @@ pnpm-debug.log*
 !.vscode/extensions.json
 .DS_Store
 Thumbs.db
+
+# Nx internals (from the Nx workspace template)
+.nx/polygraph/
+.nx/self-healing/
+.nx/migrate-runs/
+.claude/worktrees/
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+.vitest
+
+test-output
