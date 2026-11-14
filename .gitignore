@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+tmp/
+out-tsc/
+*.tsbuildinfo
+
+# Nx
+.nx/cache/
+.nx/workspace-data/
+
+# Tests and coverage
+coverage/
+test-output/
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+apps/*/playwright-report/
+apps/*/test-results/
+
+# Environment — secrets never enter the repo; .env.example is the source of truth
+.env
+.env.*
+!.env.example
+
+# Deploy tooling (local links and context, not shared)
+.vercel/
+.neon
+
+# Claude Code: per-machine settings stay local; project settings are committed
+.claude/settings.local.json
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editors and OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
