@@ -38,7 +38,7 @@
           "parallel": true,
           "commands": [
             "tsc --build tsconfig.app.json --watch --preserveWatchOutput",
-            "node --watch --enable-source-maps dist/main.js"
+            "node --env-file-if-exists=../../.env --watch --enable-source-maps dist/main.js"
           ]
         }
       }

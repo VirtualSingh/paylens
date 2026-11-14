@@ -10,6 +10,9 @@ export default defineConfig(() => ({
   server: {
     port: 4200,
     host: 'localhost',
+    // Same origin as production, where Vercel rewrites /api/* to the API project: the
+    // browser only ever talks to the web origin, so there is no CORS to configure.
+    proxy: { '/api': 'http://localhost:3000' },
   },
   preview: {
     port: 4300,

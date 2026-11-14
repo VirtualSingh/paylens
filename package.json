@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "dev": "nx run-many -t serve -p api web",
     "prepare": "husky",
     "build": "nx run-many -t build",
     "lint": "nx run-many -t lint",
