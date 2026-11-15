@@ -134,20 +134,19 @@ describe('planSalaryChange rules', () => {
 
 describe('planSalaryChange corrections', () => {
   // Contiguous history: ₹25L from 2023-04-01, then ₹28.5L from 2025-04-01 (current).
-  const history = [
-    aSalaryRecord({
-      id: 'salary-2',
-      effectiveFrom: '2023-04-01',
-      effectiveTo: '2025-04-01',
-      amount: inr(2_500_000),
-    }),
-    aSalaryRecord({
-      id: 'salary-3',
-      effectiveFrom: '2025-04-01',
-      effectiveTo: null,
-      amount: inr(2_850_000),
-    }),
-  ];
+  const previous = aSalaryRecord({
+    id: 'salary-2',
+    effectiveFrom: '2023-04-01',
+    effectiveTo: '2025-04-01',
+    amount: inr(2_500_000),
+  });
+  const current = aSalaryRecord({
+    id: 'salary-3',
+    effectiveFrom: '2025-04-01',
+    effectiveTo: null,
+    amount: inr(2_850_000),
+  });
+  const history = [previous, current];
   const correction = {
     amount: inr(2_600_000),
     frequency: 'annual',
@@ -223,7 +222,7 @@ describe('planSalaryChange corrections', () => {
     });
 
     const plan = planSalaryChange(
-      [history[0], superseded, replacement].filter((r) => r !== undefined),
+      [previous, superseded, replacement],
       { ...correction, effectiveFrom: '2025-04-01' },
       india,
     );
