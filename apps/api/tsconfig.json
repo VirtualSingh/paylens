@@ -1,5 +1,16 @@
 {
   "extends": "../../tsconfig.base.json",
+  // Solution file: `tsc --build` (Nx typecheck) compiles the two referenced configs and
+  // nothing from here. Vercel, however, compiles src/main.ts itself with *this* file, so it
+  // carries the app's emit settings too (ADR-011): JS output plus the decorator metadata
+  // NestJS's dependency injection needs.
+  "compilerOptions": {
+    "composite": false,
+    "emitDeclarationOnly": false,
+    "declarationMap": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
   "files": [],
   "include": [],
   "references": [
