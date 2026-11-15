@@ -123,6 +123,15 @@ export class EmployeesRepository {
     return column.number(rows[0] ?? { version: Number.NaN }, 'version');
   }
 
+  /** Whether there is a person with this id (for 404s on their sub-resources). */
+  async exists(id: string): Promise<boolean> {
+    const rows = await selectRows(
+      this.db,
+      sql`select 1 from employees where id = ${id}`,
+    );
+    return rows.length > 0;
+  }
+
   /** One person with the same current pay as the directory, plus profile details. */
   async findById(id: string): Promise<ProfileRow | null> {
     const rows = await selectRows(

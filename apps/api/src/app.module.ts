@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ClockModule } from './common/clock.js';
 import { DatabaseModule } from './db/database.module.js';
@@ -19,6 +20,7 @@ import { SalariesModule } from './salaries/salaries.module.js';
     EmployeesModule,
     EmployeeChangesModule,
     SalariesModule,
+    AuditModule,
     ReferenceModule,
     PayBandsModule,
     FxModule,
