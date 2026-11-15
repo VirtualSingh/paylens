@@ -9,9 +9,9 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'node',
     include: ['src/**/*.spec.ts', 'src/**/*.e2e-spec.ts'],
-    // Booting an in-process Postgres (PGlite) with extensions takes ~3-6 s, more while
-    // other test files compete for the CPU. Hooks get 30 s; tests keep the 5 s default.
-    hookTimeout: 30_000,
+    // Each worker boots and migrates one PGlite template (~2-6 s, far more while lint and
+    // typecheck share the CPU). Setup hooks get 60 s; tests keep the 5 s default.
+    hookTimeout: 60_000,
     // Spec files in the same worker share one module cache, so NestJS and its dependencies
     // are imported once per worker instead of once per file (about a third faster here). Safe because
     // every spec builds its own Nest app and database and no module holds mutable state.

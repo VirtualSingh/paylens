@@ -10,5 +10,5 @@ const toWorkspacePaths = (files) =>
 export default {
   '*': 'prettier --write --ignore-unknown',
   '*.{ts,tsx,js,jsx,mjs,cjs,mts,cts}': (files) =>
-    `nx affected -t lint typecheck test --files=${toWorkspacePaths(files)}`,
+    `nx affected -t lint typecheck test --parallel=1 --files=${toWorkspacePaths(files)}`,
 };
