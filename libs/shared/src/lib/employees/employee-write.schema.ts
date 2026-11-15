@@ -21,7 +21,7 @@ const LookupCodeSchema = z.string().trim().min(1).max(32);
  */
 export const FteSchema = z
   .string()
-  .regex(/^(0\.\d{1,2}|1(\.0{1,2})?)$/, 'Use a decimal from 0.01 to 1')
+  .regex(/^(?:0\.\d\d?|1|1\.0|1\.00)$/, 'Use a decimal from 0.01 to 1')
   .refine((fte) => !/^0\.0{1,2}$/.test(fte), 'FTE must be more than 0')
   .transform((fte) => fte.replace(/\.?0+$/, ''));
 
