@@ -28,8 +28,11 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Now (next 3 steps)
 
-1. Pushpendra: unlock GitHub *account* billing (see Blockers) — still locked at run
-   43680916033 (aab7c68) after Actions were enabled on the repo. Then re-run CI, fix anything red.
+1. CI security job red (run 43681011035): OSV finds 25 vulns, all dev tooling (prod audit
+   and gitleaks pass; lint/typecheck/test/build green). Fix: Nx 24.0.0 → 24.0.6 (undici
+   7.30.1, 18 findings); pnpm overrides `sockjs>uuid ^11.1.1`, `@esbuild-kit/core-utils>esbuild
+   ^0.25` (re-test db:generate/db:migrate); `osv-scanner.toml` ignores with reason + expiry for
+   glob/minimatch (majors Nx doesn't support) and deepmerge (no fix); ADR-012.
 2. Phase 0 · 0.6 — create Neon project + Vercel projects, deploy, run `pnpm db:migrate`
    against Neon, record URLs here. CLIs are signed in (vercel: virtualsingh, hobby team
    `virtualsinghs-projects`; neon: Pushpendra); MCP tools load after the pending restart.
@@ -95,9 +98,7 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Blockers
 
-- **GitHub Actions will not start any job: "account is locked due to a billing issue".**
-  Needs Pushpendra at https://github.com/settings/billing (resolve the payment/spending
-  issue). Public repos normally run Actions free. Until then "CI green" cannot be shown.
+- ~~GitHub Actions billing lock~~ — resolved 2026-11-15 by Pushpendra; jobs run normally.
 - ~~Docker not installed~~ — resolved 2026-11-15 (Docker Desktop 29.9.3).
 - ~~Vercel and Neon MCP OAuth~~ — done by Pushpendra 2026-11-15; tools appear after a restart.
 
