@@ -5,11 +5,9 @@ import type {
   SalaryChangeResult,
   SalaryRecordJson,
 } from '@paylens/shared';
-import { sql } from 'drizzle-orm';
 import { AuditRepository } from '../audit/audit.repository.js';
 import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 import { type Database, DATABASE } from '../db/database.js';
-import { selectRows } from '../db/select-rows.js';
 import { EmployeesRepository } from '../employees/employees.repository.js';
 import { EmployeesService } from '../employees/employees.service.js';
 import { type SalaryRecordRow, SalaryRepository } from './salary.repository.js';
@@ -26,11 +24,7 @@ export class SalariesService {
 
   /** The effective-dated history of one person, newest first; 404 if there is no such person. */
   async history(employeeId: string): Promise<SalaryRecordJson[]> {
-    const exists = await selectRows(
-      this.db,
-      sql`select 1 from employees where id = ${employeeId}`,
-    );
-    if (exists.length === 0) {
+    if (!(await this.employees.exists(employeeId))) {
       throw new NotFoundException('There is no employee with this id');
     }
     return (await this.salaries.history(employeeId)).map(toSalaryRecordJson);
