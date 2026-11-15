@@ -1,7 +1,9 @@
 import type { INestApplication, Type } from '@nestjs/common';
+import type { IsoDate } from '@paylens/domain';
 import { Test } from '@nestjs/testing';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { AppModule } from '../app.module.js';
+import { Clock, FixedClock } from '../common/clock.js';
 import { configureApp } from '../configure-app.js';
 import { type Database, DATABASE } from '../db/database.js';
 
@@ -15,6 +17,8 @@ export interface TestAppOptions {
    * do not touch the database get Drizzle's mock, which has no connection at all.
    */
   readonly database?: Database;
+  /** "Today" for the app's Clock; defaults to a fixed 2026-11-14 so tests never drift. */
+  readonly today?: IsoDate;
 }
 
 /** The real AppModule with the production configuration, ready for supertest. */
@@ -27,6 +31,8 @@ export async function createTestApp(
   })
     .overrideProvider(DATABASE)
     .useValue(options.database ?? drizzle.mock())
+    .overrideProvider(Clock)
+    .useValue(new FixedClock(options.today ?? '2026-11-14'))
     .compile();
   const app = configureApp(moduleRef.createNestApplication(), {
     docs: options.docs ?? false,
