@@ -49,8 +49,6 @@ export class ProblemDetailsFilter implements ExceptionFilter {
 
     const problem: ProblemDetails = {
       type: 'about:blank',
-      // `status` is a number from HttpException/HttpStatus, not user input.
-      // eslint-disable-next-line security/detect-object-injection
       title: STATUS_CODES[status] ?? 'Error',
       status,
       ...(exception instanceof HttpException &&

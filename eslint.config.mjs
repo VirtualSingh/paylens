@@ -71,6 +71,16 @@ export default [
     },
   },
   {
+    // `security/detect-object-injection` cannot see types: it flags every `obj[key]`, including
+    // lookups whose key is a closed union like 'annual' | 'monthly'. In TypeScript the key's type
+    // bounds it, and untrusted input is validated at the boundary with the shared Zod schemas
+    // (CLAUDE.md), so the rule only produces noise here. It stays on for plain JavaScript.
+    files: typeScriptFiles,
+    rules: {
+      'security/detect-object-injection': 'off',
+    },
+  },
+  {
     // Tests may assert that a value exists with `!` after checking it; production code may not.
     files: testFiles,
     rules: {
