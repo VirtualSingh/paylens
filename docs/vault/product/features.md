@@ -51,7 +51,7 @@ out, with reasoning in [../product.md](../product.md) and ADR-010.
 | F-19 | Band positioning: beeswarm/strip of everyone's position in band, by level; outlier list (hr roles) | Must | Dashboard hero. |
 | F-20 | Distribution: percentiles and histogram per group | Must | `percentile_cont` in SQL. |
 | F-21 | Trend: payroll and headcount over time from effective-dated history | Should | Monthly buckets; FX as-of bucket end. |
-| F-22 | Pay gap by category (gender default; by level/country), mean & median, with a "what this does / does not show" note | Should | Mirrors EU directive reporting (mean/median gap). Pending decision on gender in model. |
+| F-22 | Pay gap by category (gender default; by level/country), mean & median, with a "what this does / does not show" note | Should | Mirrors EU directive reporting (mean/median gap). Gender: female | male (D-2). |
 | F-23 | Export any analytics table as CSV | Should | CSV-injection safe. |
 
 ## E. Data in and out

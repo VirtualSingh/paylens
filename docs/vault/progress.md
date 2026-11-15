@@ -27,16 +27,15 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Now (next 3 steps)
 
-1. Pushpendra: Phase 0 checkpoint review (exit checklist in plan/phase-0-foundation.md);
-   answer D-2 and D-5 (due today) — D-2 shapes the Phase 1 schema.
-2. Phase 1 · 1.1 — domain lib: Money (subtract, compare, allocate), FX conversion with
-   half-even rounding, effective periods, band math (compa-ratio, penetration) — all TDD.
-3. Phase 1 · 1.2 — Drizzle schema + exclusion constraints (PGlite-tested), first data migrations.
+1. Phase 1 · 1.1 — domain lib: Money (subtract, multiplyRatio, format), annualize, FX
+   conversion (exact rational bigint math, half-even), band metrics, salary-change planning.
+2. Phase 1 · 1.2 — Drizzle schema + exclusion constraints (PGlite-tested), views, indexes.
+3. Phase 1 · 1.3–1.6 — repositories, 10k seed, employees/salary API, deploy; then Phase 2.
 
 ## Next (this phase → Phase 1)
 
 - `pnpm test` under 20 s: the health spec boots two PGlites (~6 s); share one, or a template DB.
-- Branch protection: decide after D-5 (requiring checks on `main` blocks direct pushes).
+- Branch protection: not enabled — D-5 is `main` with CI; required checks would block direct pushes.
 - Optional: Vercel MCP "authorize team access" so deploy inspection works through MCP too.
 
 ## Later (next phase)
@@ -48,10 +47,10 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 | # | Decision | Default if no answer | Owner | Due |
 |---|---|---|---|---|
 | ~~D-1~~ | ~~Frontend: React vs Angular~~ — answered: React (no recruiter reply expected) | React | Pushpendra (recruiter) | 2026-11-15 |
-| D-2 | Gender in data model for pay-gap (F-22) | Include, optional field, suppression n<5 | Pushpendra | 2026-11-15 |
+| ~~D-2~~ | ~~Gender in data model for pay-gap (F-22)~~ — answered: `female` \| `male`, required; suppression n<5 | Include, optional field, suppression n<5 | Pushpendra | 2026-11-15 |
 | D-3 | Assistant model for the demo: Claude Haiku (~$5) vs Gemini Flash-Lite (free) | Provider-neutral code; demo on Gemini Flash-Lite if no key is funded by Phase 4 | Pushpendra | 2026-11-17 |
 | ~~D-4~~ | ~~Repo public or private~~ — answered: Pushpendra created the repo public | Public | Pushpendra | 2026-11-15 |
-| D-5 | Commit directly to `main` with CI vs PR flow (working on `main` meanwhile; switching later costs nothing) | `main` with CI (history is the artefact) | Pushpendra | 2026-11-15 |
+| ~~D-5~~ | ~~Commit directly to `main` with CI vs PR flow~~ — default taken (no objection; "continue"): `main` with CI | `main` with CI (history is the artefact) | Pushpendra | 2026-11-15 |
 
 ## Decisions taken (short; ADR has the reasoning)
 

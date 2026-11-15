@@ -1,6 +1,6 @@
 ---
 title: Data model — tables, constraints, indexes, money rules
-updated: 2026-11-14
+updated: 2026-11-15
 status: active
 ---
 
@@ -19,7 +19,7 @@ employee_status: active | on_leave | terminated
 pay_frequency:   annual | monthly
 salary_reason:   hire | merit | promotion | market_adjustment | correction | transfer | other
 user_role:       admin | hr_manager | viewer
-gender:          female | male | non_binary | undisclosed      -- only if F-22 is confirmed
+gender:          female | male                                  -- D-2, decided 2026-11-15
 import_status:   validating | validated | failed | committed
 ```
 
@@ -40,7 +40,7 @@ employees       id uuid PK, employee_code text UNIQUE ('ACME-000001'),
                 job_family_id → job_families, job_level_id → job_levels, job_title text,
                 manager_id → employees NULL, employment_type, fte numeric(3,2) CHECK 0<fte<=1,
                 hire_date date, termination_date date NULL CHECK (termination_date >= hire_date),
-                status employee_status, gender gender NULL,
+                status employee_status, gender gender NOT NULL,
                 version integer NOT NULL DEFAULT 1, created_at, updated_at
 salary_records  id uuid PK, employee_id → employees,
                 amount_minor bigint CHECK > 0, currency_code → currencies,

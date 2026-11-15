@@ -57,7 +57,7 @@ imported text; compromised dependencies; a careless commit of a secret.
 ## Privacy
 
 Salary data is personal data. Collect only what the features need (no DOB, no address).
-Gender is optional and only present if F-22 is confirmed; pay-gap outputs are suppressed
+Gender is recorded as female or male (D-2), used only for pay-gap analysis; outputs are suppressed
 for small groups (n < 5). The assistant receives aggregates or employee codes only. Exports
 are role-gated and logged. A `docs/privacy.md` note explains data flows for the demo.
 

@@ -1,6 +1,6 @@
 ---
 title: Seed — deterministic 10,000-employee dataset
-updated: 2026-11-14
+updated: 2026-11-15
 status: active
 ---
 
@@ -21,7 +21,7 @@ same database every time (`faker.seed(42)`, no `Date.now()` except a fixed `SEED
 | Levels (10) | IC1–IC6 (ranks 1–6), M1–M4 (ranks 4–7 equivalent); distribution pyramid: IC2–IC4 dense, IC6/M4 rare (≈1%) |
 | Employment type | full_time 90%, part_time 6% (fte 0.5–0.8), contractor 4% |
 | Status | active 92%, on_leave 3%, terminated 5% (termination_date set; still in history and audit) |
-| Gender (if F-22) | female 46%, male 50%, non_binary 1%, undisclosed 3% — no engineered gap; natural noise only |
+| Gender (D-2) | female 48%, male 52% — no engineered gap; natural noise only |
 | Hire dates | 2014-01-01 … 2026-10-31, weighted toward recent years (growth) |
 | Managers | M-track employees in the same department and country; ICs get a manager one level up; ~8 reports per manager |
 

@@ -78,6 +78,6 @@ Detailed diagrams (containers, request lifecycle, salary change sequence) are in
 
 ## Open design decisions (tracked in progress.md)
 
-- Frontend framework: React (default) vs Angular — recruiter reply expected 2026-11-15.
-- Gender in the data model for F-22 — Pushpendra to confirm.
+- ~~Frontend framework~~ — React, final (D-1, 2026-11-15).
+- ~~Gender in the data model for F-22~~ — female | male, required (D-2, 2026-11-15).
 - Assistant model provider for the deployed demo — Claude Haiku (paid, ~$5) vs Gemini Flash-Lite (free, 500 req/day).
