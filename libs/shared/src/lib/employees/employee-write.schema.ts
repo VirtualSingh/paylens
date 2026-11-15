@@ -15,12 +15,14 @@ const LookupCodeSchema = z.string().trim().min(1).max(32);
 
 /**
  * Share of full time: "1", "0.5", "0.75". A decimal string, like every other exact number in
- * the contract, so it never passes through a float on the way to numeric(3,2).
+ * the contract, so it never passes through a float on the way to numeric(3,2). Trailing zeros
+ * are dropped ("0.80" → "0.8", "1.00" → "1"), so equal values are equal strings.
  */
 export const FteSchema = z
   .string()
   .regex(/^(0\.\d{1,2}|1(\.0{1,2})?)$/, 'Use a decimal from 0.01 to 1')
-  .refine((fte) => !/^0\.0{1,2}$/.test(fte), 'FTE must be more than 0');
+  .refine((fte) => !/^0\.0{1,2}$/.test(fte), 'FTE must be more than 0')
+  .transform((fte) => fte.replace(/\.?0+$/, ''));
 
 /** Fields a person is created with and HR may edit later (F-10). */
 const EmploymentDetails = {

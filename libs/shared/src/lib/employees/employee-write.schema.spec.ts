@@ -61,10 +61,16 @@ describe('CreateEmployeeRequestSchema', () => {
     });
   });
 
-  it.each(['0.5', '0.75', '1', '1.00'])('accepts an FTE of %s', (fte) => {
-    expect(
-      CreateEmployeeRequestSchema.safeParse({ ...valid, fte }).success,
-    ).toBe(true);
+  it.each([
+    ['0.5', '0.5'],
+    ['0.75', '0.75'],
+    ['0.80', '0.8'],
+    ['1', '1'],
+    ['1.00', '1'],
+  ])('accepts an FTE of %s, written as %s', (fte, canonical) => {
+    expect(CreateEmployeeRequestSchema.parse({ ...valid, fte }).fte).toBe(
+      canonical,
+    );
   });
 
   it.each([
