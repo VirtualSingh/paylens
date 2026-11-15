@@ -11,14 +11,31 @@ const MIGRATIONS_FOLDER = fileURLToPath(
 );
 
 /**
- * A fresh in-memory Postgres for one test file (ADR-007): real SQL, real constraints, no
- * Docker, no network. The extension binaries production uses are loaded into PGlite, then
- * the project's own migrations run — the same ones `pnpm db:migrate` applies to Neon.
+ * Booting Postgres and running the migrations takes seconds; cloning a migrated database
+ * takes a fraction of one. So each test worker migrates one template, once, and every test
+ * file gets its own clone.
  */
-export async function createTestDatabase(): Promise<PGlite> {
+let template: Promise<PGlite> | undefined;
+
+async function createMigratedTemplate(): Promise<PGlite> {
   const db = await PGlite.create({
     extensions: { btree_gist, citext, pg_trgm },
   });
   await migrate(drizzle(db), { migrationsFolder: MIGRATIONS_FOLDER });
   return db;
+}
+
+/**
+ * A fresh, fully migrated in-memory Postgres for one test file (ADR-007): real SQL, real
+ * constraints, no Docker, no network. The extension binaries production uses are loaded,
+ * and the project's own migrations run — the same ones `pnpm db:migrate` applies to Neon.
+ */
+export async function createTestDatabase(): Promise<PGlite> {
+  template ??= createMigratedTemplate();
+  const copy = await (await template).clone();
+  // clone() is typed as the PGlite interface; the object is a PGlite instance.
+  if (!(copy instanceof PGlite)) {
+    throw new TypeError('PGlite.clone() did not return a PGlite instance');
+  }
+  return copy;
 }
