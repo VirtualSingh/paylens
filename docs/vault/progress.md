@@ -19,9 +19,11 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 - Locally green: domain 2 · shared 11 · api 20 (incl. PGlite) · web 10 tests, lint,
   typecheck, build, Prettier, `pnpm audit --prod` (0 known vulns); 1 Playwright smoke.
 - `pnpm dev` verified: web :4200, API via the Vite proxy, `/health/ready` 503 without a DB.
-- MCP servers (vercel, neon, nx-mcp) are in `.mcp.json`; they load after a Claude Code
-  restart, which is requested together with the Vercel/Neon browser logins at task 0.6.
-- Frontend framework: **React (default)**; recruiter's answer on Angular due 2026-11-15.
+- Claude Code restarted (2026-11-15): nx-mcp connected and answering; **vercel and neon MCP
+  servers await OAuth** — Pushpendra runs `/mcp` in the Claude Code panel and signs in to both.
+- Docker Desktop 29.9.3 + Compose v5.7 installed: `docker compose up -d --wait db` →
+  `pnpm db:migrate` applied migration 0000 (btree_gist, citext, pg_trgm) → `/health/ready` 200.
+- Frontend framework: **React — final** (D-1 closed by Pushpendra; ADR-003 updated).
 - Known issue: api suite ~20 s wall clock; `--no-isolate` measured at 12.6 s (not applied yet).
 
 ## Now (next 3 steps)
@@ -45,7 +47,7 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 | # | Decision | Default if no answer | Owner | Due |
 |---|---|---|---|---|
-| D-1 | Frontend: React vs Angular | React | Pushpendra (recruiter) | 2026-11-15 |
+| ~~D-1~~ | ~~Frontend: React vs Angular~~ — answered: React (no recruiter reply expected) | React | Pushpendra (recruiter) | 2026-11-15 |
 | D-2 | Gender in data model for pay-gap (F-22) | Include, optional field, suppression n<5 | Pushpendra | 2026-11-15 |
 | D-3 | Assistant model for the demo: Claude Haiku (~$5) vs Gemini Flash-Lite (free) | Provider-neutral code; demo on Gemini Flash-Lite if no key is funded by Phase 4 | Pushpendra | 2026-11-17 |
 | ~~D-4~~ | ~~Repo public or private~~ — answered: Pushpendra created the repo public | Public | Pushpendra | 2026-11-15 |
@@ -88,14 +90,15 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 - 2026-11-15 · **No `Co-Authored-By` trailers in commit messages** (Pushpendra). Commits up to
   `22d481a` keep theirs: removing them would need a history rewrite + force push (CLAUDE.md forbids).
 - 2026-11-15 · CI bundle-size check (deployment.md) deferred to the Phase 4 performance pass.
+- 2026-11-15 · D-1 closed: React ecosystem (Pushpendra: the recruiter is not expected to reply).
 
 ## Blockers
 
 - **GitHub Actions will not start any job: "account is locked due to a billing issue".**
   Needs Pushpendra at https://github.com/settings/billing (resolve the payment/spending
   issue). Public repos normally run Actions free. Until then "CI green" cannot be shown.
-- Docker not installed (admin install): https://docs.docker.com/desktop/setup/install/windows-install/
-  Only needed for the local `docker compose` Postgres; tests use PGlite. Not blocking.
+- ~~Docker not installed~~ — resolved 2026-11-15 (Docker Desktop 29.9.3).
+- Vercel and Neon MCP servers need Pushpendra's OAuth sign-in (`/mcp`) before task 0.6.
 
 ## Review notes from Pushpendra (agent addresses these first)
 
@@ -108,7 +111,7 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 - Machine (0.0): Windows 11 Home 10.0.26200 · Git Bash + PowerShell 5.1 · Node 24.21.0 ·
   npm 11.19.0 · pnpm 12.18.0 (npm -g; corepack needs admin to write into Program Files) ·
   git 2.37.0 · gh 2.102.0 (logged in as VirtualSingh) · vercel 65.16.0 · neon 9.5.0 ·
-  Docker: absent · Claude Code 2.1.325 (VS Code extension).
+  Docker Desktop 29.9.3 + Compose v5.7.0 · Claude Code 2.1.325 (VS Code extension).
 - MCP (project scope, `.mcp.json`): vercel (http), neon (http), nx-mcp (stdio via `cmd /c npx`).
 - Scaffold (0.2): Nx 24.0.0 · NestJS 12.5.0 · React 19.3.1 · Vite 8.3.8 · Vitest 5.0.5 ·
   TypeScript 6.0.3 · ESLint 9.39.5 + typescript-eslint 8.72.2 · Playwright 1.65.0 ·

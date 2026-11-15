@@ -1,6 +1,6 @@
 # ADR-003 — Build the web app in React (Vite + shadcn/ui); Angular only if the recruiter allows it
 
-- **Status:** Accepted (default) — final confirmation pending recruiter reply (D-1 in progress.md)
+- **Status:** Accepted — final (2026-11-15). ~~Final confirmation pending recruiter reply~~: Pushpendra closed D-1 as React; no reply is expected. The Angular variant is not built.
 - **Date:** 2026-11-14
 - **Deciders:** Pushpendra (with Claude)
 

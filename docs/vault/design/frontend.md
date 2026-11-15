@@ -1,7 +1,7 @@
 ---
 title: Frontend implementation — React default, Angular variant
-updated: 2026-11-14
-status: active (framework decision pending recruiter reply)
+updated: 2026-11-15
+status: active — Variant A (React) is final (D-1 closed 2026-11-15); Variant B kept for the record only
 ---
 
 # Frontend implementation
