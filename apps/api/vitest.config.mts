@@ -12,6 +12,10 @@ export default defineConfig(() => ({
     // Booting an in-process Postgres (PGlite) with extensions takes ~3-6 s, more while
     // other test files compete for the CPU. Hooks get 30 s; tests keep the 5 s default.
     hookTimeout: 30_000,
+    // Spec files in the same worker share one module cache, so NestJS and its dependencies
+    // are imported once per worker instead of once per file (about a third faster here). Safe because
+    // every spec builds its own Nest app and database and no module holds mutable state.
+    isolate: false,
     passWithNoTests: true,
     reporters: ['default'],
     coverage: {
