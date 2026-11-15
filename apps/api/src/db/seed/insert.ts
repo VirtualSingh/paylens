@@ -89,16 +89,14 @@ export async function insertOrg(
         .values([...org.jobLevels])
         .returning(),
     );
-    await tx
-      .insert(fxRates)
-      .values(
-        org.fxRates.map((r) => ({
-          quoteCurrency: r.quote,
-          rate: r.rate,
-          asOf: r.asOf,
-          source: 'sample',
-        })),
-      );
+    await tx.insert(fxRates).values(
+      org.fxRates.map((r) => ({
+        quoteCurrency: r.quote,
+        rate: r.rate,
+        asOf: r.asOf,
+        source: 'sample',
+      })),
+    );
     await tx.insert(payBands).values(
       org.payBands.map((b) => ({
         jobLevelId: lookup(levelIds, b.levelCode),
