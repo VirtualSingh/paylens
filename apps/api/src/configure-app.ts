@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { withSharedSchemas } from './common/api-contract.js';
 import { ProblemDetailsFilter } from './common/problem-details.filter.js';
 import { requestIdMiddleware } from './common/request-id.middleware.js';
 
@@ -39,12 +40,16 @@ export function configureApp(
 
   if (options.docs) {
     const config = new DocumentBuilder()
+      .setOpenAPIVersion('3.1.0')
       .setTitle('PayLens API')
-      .setDescription('Employee salary management for ACME')
+      .setDescription(
+        'Employee salary management for ACME. Errors are application/problem+json ' +
+          '(RFC 9457); changes to a person need If-Match with the ETag you loaded.',
+      )
       .setVersion('1')
       .build();
     SwaggerModule.setup('api/docs', app, () =>
-      SwaggerModule.createDocument(app, config),
+      withSharedSchemas(SwaggerModule.createDocument(app, config)),
     );
   }
   return app;

@@ -1,6 +1,9 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { z } from 'zod';
 import { Public } from '../auth/access.decorators.js';
+import { ApiContract } from '../common/api-contract.js';
 import { HealthService } from './health.service.js';
 
 export type ReadinessReport =
@@ -10,6 +13,14 @@ export type ReadinessReport =
       readonly checks: { readonly database: 'down' };
     };
 
+// Only the docs use these; the handlers' return types are the contract in code.
+const LivenessSchema = z.object({ status: z.literal('ok') });
+const ReadinessSchema = z.object({
+  status: z.enum(['ok', 'unavailable']),
+  checks: z.object({ database: z.enum(['up', 'down']) }),
+});
+
+@ApiTags('Health')
 @Controller('health')
 @Public()
 export class HealthController {
@@ -17,6 +28,15 @@ export class HealthController {
 
   /** Liveness: the process is up and serving HTTP. Touches nothing else. */
   @Get()
+  @ApiContract({
+    summary: 'Liveness: the process answers HTTP',
+    public: true,
+    success: {
+      status: HttpStatus.OK,
+      schema: LivenessSchema,
+      description: 'Up',
+    },
+  })
   live(): { status: 'ok' } {
     return { status: 'ok' };
   }
@@ -27,6 +47,22 @@ export class HealthController {
    * serialise the returned report while we set the status code.
    */
   @Get('ready')
+  @ApiContract({
+    summary: 'Readiness: the database answers too',
+    public: true,
+    success: {
+      status: HttpStatus.OK,
+      schema: ReadinessSchema,
+      description: 'Ready',
+    },
+    otherResponses: [
+      {
+        status: HttpStatus.SERVICE_UNAVAILABLE,
+        schema: ReadinessSchema,
+        description: 'Not ready: the database does not answer',
+      },
+    ],
+  })
   async ready(
     @Res({ passthrough: true }) response: Response,
   ): Promise<ReadinessReport> {

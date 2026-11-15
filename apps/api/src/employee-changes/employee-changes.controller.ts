@@ -15,19 +15,23 @@ import {
   CreateEmployeeRequestSchema,
   EmployeeIdParamsSchema,
   type EmployeeProfile,
+  EmployeeProfileSchema,
   type EmployeeStatusChangeRequest,
   EmployeeStatusChangeRequestSchema,
   type UpdateEmployeeRequest,
   UpdateEmployeeRequestSchema,
 } from '@paylens/shared';
+import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { CurrentUser, Roles } from '../auth/access.decorators.js';
 import type { AuthenticatedUser } from '../auth/authenticated-user.js';
+import { ApiContract } from '../common/api-contract.js';
 import { expectedVersion } from '../common/if-match.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { API_PREFIX } from '../configure-app.js';
 import { EmployeeChangesService } from './employee-changes.service.js';
 
+@ApiTags('Employees')
 @Controller('employees')
 export class EmployeeChangesController {
   constructor(private readonly changes: EmployeeChangesService) {}
@@ -38,6 +42,21 @@ export class EmployeeChangesController {
    */
   @Post()
   @Roles('hr_manager')
+  @ApiContract({
+    summary: 'Add a person with the salary they are hired on',
+    body: CreateEmployeeRequestSchema,
+    success: {
+      status: HttpStatus.CREATED,
+      schema: EmployeeProfileSchema,
+      description: 'The new profile; Location is its address',
+    },
+    etag: true,
+    problems: [
+      HttpStatus.BAD_REQUEST,
+      HttpStatus.CONFLICT,
+      HttpStatus.UNPROCESSABLE_ENTITY,
+    ],
+  })
   async create(
     @Body(new ZodValidationPipe(CreateEmployeeRequestSchema))
     body: CreateEmployeeRequest,
@@ -61,6 +80,25 @@ export class EmployeeChangesController {
    */
   @Patch(':id')
   @Roles('hr_manager')
+  @ApiContract({
+    summary: 'Edit employment details',
+    params: EmployeeIdParamsSchema,
+    body: UpdateEmployeeRequestSchema,
+    ifMatch: true,
+    success: {
+      status: HttpStatus.OK,
+      schema: EmployeeProfileSchema,
+      description: 'The profile after the edit',
+    },
+    etag: true,
+    problems: [
+      HttpStatus.BAD_REQUEST,
+      HttpStatus.NOT_FOUND,
+      HttpStatus.CONFLICT,
+      HttpStatus.UNPROCESSABLE_ENTITY,
+      HttpStatus.PRECONDITION_REQUIRED,
+    ],
+  })
   async update(
     @Param(new ZodValidationPipe(EmployeeIdParamsSchema))
     { id }: { id: string },
@@ -89,6 +127,25 @@ export class EmployeeChangesController {
   @Post(':id/status')
   @HttpCode(HttpStatus.OK)
   @Roles('hr_manager')
+  @ApiContract({
+    summary: 'Leave, return or termination',
+    params: EmployeeIdParamsSchema,
+    body: EmployeeStatusChangeRequestSchema,
+    ifMatch: true,
+    success: {
+      status: HttpStatus.OK,
+      schema: EmployeeProfileSchema,
+      description: 'The profile with its new status',
+    },
+    etag: true,
+    problems: [
+      HttpStatus.BAD_REQUEST,
+      HttpStatus.NOT_FOUND,
+      HttpStatus.CONFLICT,
+      HttpStatus.UNPROCESSABLE_ENTITY,
+      HttpStatus.PRECONDITION_REQUIRED,
+    ],
+  })
   async changeStatus(
     @Param(new ZodValidationPipe(EmployeeIdParamsSchema))
     { id }: { id: string },
