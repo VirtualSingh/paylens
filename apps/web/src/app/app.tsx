@@ -1,12 +1,13 @@
-import { AppShell } from './app-shell';
+import { useState } from 'react';
+import { createBrowserRouter, RouterProvider } from 'react-router';
+import { AppProviders } from './providers';
+import { routes } from './routes';
 
 export function App() {
+  const [router] = useState(() => createBrowserRouter(routes));
   return (
-    <AppShell>
-      <h1 className="text-xl">How ACME pays people</h1>
-      <p className="mt-1 text-muted-foreground">
-        The dashboard is being built.
-      </p>
-    </AppShell>
+    <AppProviders>
+      <RouterProvider router={router} />
+    </AppProviders>
   );
 }

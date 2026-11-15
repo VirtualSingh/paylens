@@ -1,4 +1,9 @@
-import type { ReactNode } from 'react';
+import { USER_ROLES, type UserRole } from '@paylens/shared';
+import { type FormEvent, useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router';
+import { useCurrentRole } from '../lib/current-role';
+import { reportingCurrencies, useCountries } from '../lib/lookups';
+import { useReportingCurrency } from '../lib/reporting-currency';
 
 /** Main sections, in the order of docs/vault/design/ui-screens.md → "App shell". */
 const SECTIONS = [
@@ -10,15 +15,17 @@ const SECTIONS = [
   { label: 'Settings', path: '/settings' },
 ] as const;
 
-interface AppShellProps {
-  readonly children: ReactNode;
-}
+const ROLE_LABELS: Record<UserRole, string> = {
+  viewer: 'Viewer',
+  hr_manager: 'HR manager',
+  admin: 'Admin',
+};
 
-/**
- * Left navigation (240 px) + top bar (56 px) + content with 24 px padding (ui.md → Layout).
- * Links are plain anchors until React Router arrives with the first real routes (Phase 2).
- */
-export function AppShell({ children }: AppShellProps) {
+const selectClass =
+  'h-8 rounded-md border border-line bg-surface px-2 text-base tabular-nums';
+
+/** Left navigation (240 px) + top bar (56 px) + content with 24 px padding (ui.md → Layout). */
+export function AppShell() {
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-line">
@@ -29,22 +36,113 @@ export function AppShell({ children }: AppShellProps) {
           <ul className="flex flex-col gap-0.5">
             {SECTIONS.map((section) => (
               <li key={section.path}>
-                <a
-                  href={section.path}
-                  className="flex h-9 items-center rounded-md px-3 hover:bg-teal-soft"
+                <NavLink
+                  to={section.path}
+                  end={section.path === '/'}
+                  className={({ isActive }) =>
+                    `flex h-9 items-center rounded-md px-3 hover:bg-teal-soft ${
+                      isActive ? 'bg-teal-soft font-medium' : ''
+                    }`
+                  }
                 >
                   {section.label}
-                </a>
+                </NavLink>
               </li>
             ))}
           </ul>
         </nav>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top bar: global search (⌘K) and the reporting-currency switch arrive in Phase 2. */}
-        <header className="h-14 border-b border-line" />
-        <main className="flex-1 p-6">{children}</main>
+        <TopBar />
+        <main className="flex-1 p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
+  );
+}
+
+function TopBar() {
+  return (
+    <header className="flex h-14 items-center gap-6 border-b border-line px-6">
+      <PeopleSearch />
+      <div className="ml-auto flex items-center gap-6">
+        <ReportingCurrencySwitch />
+        {import.meta.env.DEV && <DevRoleSwitch />}
+      </div>
+    </header>
+  );
+}
+
+/** Typing a name and pressing Enter opens the directory filtered by it. */
+function PeopleSearch() {
+  const navigate = useNavigate();
+  const [text, setText] = useState('');
+
+  function search(event: FormEvent) {
+    event.preventDefault();
+    const q = text.trim();
+    navigate(q === '' ? '/people' : `/people?${new URLSearchParams({ q })}`);
+  }
+
+  return (
+    <form role="search" onSubmit={search} className="w-80">
+      <input
+        type="search"
+        aria-label="Search people"
+        placeholder="Search people by name, code or email"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        className="h-8 w-full rounded-md border border-line bg-surface px-3"
+      />
+    </form>
+  );
+}
+
+function ReportingCurrencySwitch() {
+  const { currency, setCurrency } = useReportingCurrency();
+  const countries = useCountries();
+  const currencies = reportingCurrencies(countries.data ?? []);
+  return (
+    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+      Reporting currency
+      <select
+        className={selectClass}
+        value={currency}
+        onChange={(event) => setCurrency(event.target.value)}
+      >
+        {currencies.map((code) => (
+          <option key={code}>{code}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/** TEMPORARY until sign-in (2.1): development builds only; see lib/dev-role.ts. */
+function DevRoleSwitch() {
+  const { role, setRole } = useCurrentRole();
+  return (
+    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+      Acting as (development only)
+      <select
+        className={selectClass}
+        value={role ?? 'hr_manager'}
+        onChange={(event) => {
+          const next = USER_ROLES.find(
+            (candidate) => candidate === event.target.value,
+          );
+          if (next !== undefined) {
+            setRole(next);
+          }
+        }}
+      >
+        {USER_ROLES.map((value) => (
+          <option key={value} value={value}>
+            {ROLE_LABELS[value]}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
