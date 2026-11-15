@@ -10,8 +10,12 @@
     },
     "nx-mcp": {
       "type": "stdio",
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "nx-mcp@latest"],
+      "command": "node",
+      "args": [
+        "node_modules/nx-mcp/main.js",
+        "--disableTelemetry",
+        "--minimal=false"
+      ],
       "env": {}
     }
   }
