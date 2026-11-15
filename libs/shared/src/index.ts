@@ -6,3 +6,4 @@ export * from './lib/employees/employee-directory-query.schema.js';
 export * from './lib/employees/employee-list-item.schema.js';
 export * from './lib/salaries/salary.schema.js';
 export * from './lib/reference/reference.schema.js';
+export * from './lib/employees/employee-write.schema.js';
