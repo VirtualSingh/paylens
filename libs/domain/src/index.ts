@@ -8,3 +8,4 @@ export * from './lib/salary/salary-errors.js';
 export * from './lib/fx/fx-table.js';
 export * from './lib/bands/band-metrics.js';
 export * from './lib/time/iso-date.js';
+export * from './lib/employees/employee-code.js';
