@@ -46,7 +46,7 @@ salary_records  id uuid PK, employee_id → employees,
                 amount_minor bigint CHECK > 0, currency_code → currencies,
                 pay_frequency, effective_from date, effective_to date NULL,
                 reason salary_reason, note text NULL, created_by → users NULL, created_at
-                CHECK (effective_to IS NULL OR effective_to > effective_from)
+                CHECK (effective_to IS NULL OR effective_to >= effective_from)  -- = : superseded (ADR-005)
                 EXCLUDE USING gist (employee_id WITH =,
                         daterange(effective_from, effective_to, '[)') WITH &&)   -- no overlaps, ever
 pay_bands       id, job_level_id → job_levels, country_code → countries, currency_code,

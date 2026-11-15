@@ -31,5 +31,11 @@ inside one transaction. Every mutation writes an append-only audit event with be
 - Follow-ups: transaction-time (when we *knew*) is approximated by `created_at`; add true
   bitemporal only if an auditor asks.
 
+## Note (2026-11-15, implementation)
+A correction closes the record its date falls in and inserts the corrected amount up to
+that record's old end. A correction starting on a record's first day closes it at its own
+start: a zero-length record (`effective_to = effective_from`, an empty daterange) that stays
+in history, covers no days and overlaps nothing. Hence CHECK `effective_to >= effective_from`.
+
 ## Links
 docs/vault/design/data-model.md · docs/vault/design/architecture.md (sequence) · F-08, F-09, F-04

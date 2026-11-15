@@ -1,5 +1,7 @@
 import type { CurrencyCode } from '../money/money.js';
+import type { IsoDate } from '../time/iso-date.js';
 import {
+  CorrectionOutsideHistoryError,
   EffectiveDateNotAfterCurrentError,
   SalaryCurrencyError,
   SalaryNotPositiveError,
@@ -35,6 +37,10 @@ export function planSalaryChange(
     );
   }
 
+  if (change.reason === 'correction') {
+    return planCorrection(history, change);
+  }
+
   const open = history.find((record) => record.effectiveTo === null);
   if (open && change.effectiveFrom <= open.effectiveFrom) {
     throw new EffectiveDateNotAfterCurrentError(open.effectiveFrom);
@@ -44,13 +50,50 @@ export function planSalaryChange(
     close: open
       ? [{ recordId: open.id, effectiveTo: change.effectiveFrom }]
       : [],
-    insert: {
-      effectiveFrom: change.effectiveFrom,
-      effectiveTo: null,
-      amount: change.amount,
-      frequency: change.frequency,
-      reason: change.reason,
-      note: change.note ?? null,
-    },
+    insert: newRecord(change, null),
+  };
+}
+
+/**
+ * A correction replaces the salary from its date until the end of the record that date falls
+ * in: that record is closed at the correction date and the corrected amount runs to the old
+ * end. Starting on the record's first day closes it at its own start — a zero-length record
+ * that stays in history but covers no days (ADR-005: the past is never rewritten).
+ */
+function planCorrection(
+  history: readonly SalaryRecord[],
+  change: SalaryChange,
+): SalaryChangePlan {
+  const corrected = history.find((record) =>
+    covers(record, change.effectiveFrom),
+  );
+  if (!corrected) {
+    throw new CorrectionOutsideHistoryError(change.effectiveFrom);
+  }
+  return {
+    close: [{ recordId: corrected.id, effectiveTo: change.effectiveFrom }],
+    insert: newRecord(change, corrected.effectiveTo),
+  };
+}
+
+/** Whether `date` falls in [effectiveFrom, effectiveTo); zero-length records cover nothing. */
+function covers(record: SalaryRecord, date: IsoDate): boolean {
+  return (
+    record.effectiveFrom <= date &&
+    (record.effectiveTo === null || date < record.effectiveTo)
+  );
+}
+
+function newRecord(
+  change: SalaryChange,
+  effectiveTo: IsoDate | null,
+): SalaryChangePlan['insert'] {
+  return {
+    effectiveFrom: change.effectiveFrom,
+    effectiveTo,
+    amount: change.amount,
+    frequency: change.frequency,
+    reason: change.reason,
+    note: change.note ?? null,
   };
 }

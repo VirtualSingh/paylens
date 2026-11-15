@@ -131,3 +131,105 @@ describe('planSalaryChange rules', () => {
     expect(plan).toThrow(DomainError);
   });
 });
+
+describe('planSalaryChange corrections', () => {
+  // Contiguous history: ₹25L from 2023-04-01, then ₹28.5L from 2025-04-01 (current).
+  const history = [
+    aSalaryRecord({
+      id: 'salary-2',
+      effectiveFrom: '2023-04-01',
+      effectiveTo: '2025-04-01',
+      amount: inr(2_500_000),
+    }),
+    aSalaryRecord({
+      id: 'salary-3',
+      effectiveFrom: '2025-04-01',
+      effectiveTo: null,
+      amount: inr(2_850_000),
+    }),
+  ];
+  const correction = {
+    amount: inr(2_600_000),
+    frequency: 'annual',
+    reason: 'correction',
+  } as const;
+
+  it('re-slices the record it falls in: the correction runs to where that record ended', () => {
+    const plan = planSalaryChange(
+      history,
+      { ...correction, effectiveFrom: '2024-10-01' },
+      india,
+    );
+
+    expect(plan).toEqual({
+      close: [{ recordId: 'salary-2', effectiveTo: '2024-10-01' }],
+      insert: {
+        effectiveFrom: '2024-10-01',
+        effectiveTo: '2025-04-01',
+        amount: inr(2_600_000),
+        frequency: 'annual',
+        reason: 'correction',
+        note: null,
+      },
+    });
+  });
+
+  it('supersedes a whole record when it starts on that record’s first day', () => {
+    // The 2025 raise was keyed wrongly: closing it at its own start leaves it in history
+    // with zero days, and the corrected amount takes its place.
+    const plan = planSalaryChange(
+      history,
+      { ...correction, amount: inr(2_900_000), effectiveFrom: '2025-04-01' },
+      india,
+    );
+
+    expect(plan).toEqual({
+      close: [{ recordId: 'salary-3', effectiveTo: '2025-04-01' }],
+      insert: {
+        effectiveFrom: '2025-04-01',
+        effectiveTo: null,
+        amount: inr(2_900_000),
+        frequency: 'annual',
+        reason: 'correction',
+        note: null,
+      },
+    });
+  });
+
+  it('refuses a correction dated before the first salary record', () => {
+    const plan = () =>
+      planSalaryChange(
+        history,
+        { ...correction, effectiveFrom: '2023-01-01' },
+        india,
+      );
+
+    expect(plan).toThrow(
+      expect.objectContaining({ code: 'correction_outside_history' }),
+    );
+  });
+
+  it('ignores records that a previous correction already superseded', () => {
+    const superseded = aSalaryRecord({
+      id: 'salary-3',
+      effectiveFrom: '2025-04-01',
+      effectiveTo: '2025-04-01',
+    });
+    const replacement = aSalaryRecord({
+      id: 'salary-4',
+      effectiveFrom: '2025-04-01',
+      effectiveTo: null,
+      reason: 'correction',
+    });
+
+    const plan = planSalaryChange(
+      [history[0], superseded, replacement].filter((r) => r !== undefined),
+      { ...correction, effectiveFrom: '2025-04-01' },
+      india,
+    );
+
+    expect(plan.close).toEqual([
+      { recordId: 'salary-4', effectiveTo: '2025-04-01' },
+    ]);
+  });
+});

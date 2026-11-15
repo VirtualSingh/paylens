@@ -28,3 +28,14 @@ export class EffectiveDateNotAfterCurrentError extends DomainError {
     );
   }
 }
+
+/** A correction must fall inside the employee's salary history. */
+export class CorrectionOutsideHistoryError extends DomainError {
+  readonly code = 'correction_outside_history';
+
+  constructor(readonly effectiveFrom: IsoDate) {
+    super(
+      `There is no salary on ${effectiveFrom} to correct; corrections must fall inside the salary history`,
+    );
+  }
+}
