@@ -9,3 +9,12 @@ allowBuilds:
   unrs-resolver: false
   '@nestjs/core': false
   '@scarf/scarf': false
+
+# Security pins for vulnerable transitive dev-tooling dependencies (ADR-012). Each one moves a
+# package to the first fixed release within an API-compatible line; remove when the parent
+# package ships the fix itself.
+overrides:
+  # GHSA-w5hq-g745-h8pq — sockjs (via webpack-dev-server, via @nx/web) calls uuid.v4 only.
+  'sockjs>uuid': ^11.1.1
+  # GHSA-67mh-4wv8-2f99 — drizzle-kit's @esbuild-kit loader uses esbuild's transform API only.
+  '@esbuild-kit/core-utils>esbuild': ^0.25.0
