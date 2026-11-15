@@ -1,6 +1,6 @@
 ---
 title: Security — threat model, controls (OWASP Top 10:2025), verification checklist
-updated: 2026-11-14
+updated: 2026-11-15
 status: active
 ---
 
@@ -26,7 +26,7 @@ imported text; compromised dependencies; a careless commit of a secret.
 |---|---|---|
 | A01 Broken Access Control (incl. SSRF) | `@Roles` on every route, deny by default; policies at service level; field masking DTOs for viewers; object-level checks on `/employees/:id/*`; no user-supplied URLs fetched anywhere | Role × endpoint matrix test; viewer-masking tests |
 | A02 Security Misconfiguration | `helmet` with strict CSP (`default-src 'self'`, no inline scripts, fonts self-hosted), HSTS, `X-Content-Type-Options`, `frame-ancestors 'none'`; Swagger UI disabled in prod unless `DOCS_PUBLIC=true`; body limits; no default credentials; `.env.example` only | Header assertions in API tests; manual check with securityheaders.com |
-| A03 Software Supply Chain Failures | `pnpm` lockfile, `pnpm install --frozen-lockfile` in CI, `pnpm audit --prod` gate (fail on high), GitHub Actions pinned to commit SHAs, Dependabot weekly, `osv-scanner` job, no postinstall scripts from unknown packages (`pnpm` `onlyBuiltDependencies`) | CI |
+| A03 Software Supply Chain Failures | `pnpm` lockfile, `pnpm install --frozen-lockfile` in CI, `pnpm audit --prod` gate (fail on high), GitHub Actions pinned to commit SHAs, Dependabot weekly, `osv-scanner` job (fix → pin → accept-with-expiry, ADR-012), no postinstall scripts from unknown packages (pnpm 12 `allowBuilds` allowlist) | CI |
 | A04 Cryptographic Failures | TLS everywhere (Vercel, Neon `sslmode=require`); session tokens 256-bit random, stored as SHA-256 hashes; no passwords stored (Google only); secrets only in env; `crypto.randomUUID`/`randomBytes` | Code review; session tests |
 | A05 Injection | Drizzle parameterised queries only; raw SQL fragments take parameters, never string concat; sort/filter columns from allowlists; CSV output escapes `= + - @` leading cells; React escapes by default and no `dangerouslySetInnerHTML`; markdown from the assistant rendered with a sanitiser (no raw HTML) | Tests for allowlist 400s; CSV injection test; lint rule banning `sql.raw` with template input |
 | A06 Insecure Design | Immutable history, append-only audit, exclusion constraints, least-privilege roles, aggregate-only data to the LLM, demo mode flagged and rate-limited, no hard deletes | ADRs; constraint tests |

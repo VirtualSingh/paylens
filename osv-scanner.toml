@@ -1,0 +1,27 @@
+# OSV-Scanner exceptions (ADR-012). Every entry is a finding in development tooling that
+# cannot be fixed without breaking its parent package, with the reason it does not reach
+# PayLens and a date after which CI fails again until someone re-checks it.
+# Production dependencies have no exceptions: `pnpm audit --prod` must stay clean.
+
+[[IgnoredVulns]]
+id = "GHSA-3g3m-2fjr-6pw4"
+ignoreUntil = 2026-12-31
+reason = """glob 10.x/13.x: an AbortSignal timeout can be bypassed. Only reached through \
+Jest internals (test-exclude, jest-config, jest-runtime) that @nx/* plugins depend on; \
+PayLens runs Vitest and never passes an AbortSignal to glob. Fix is glob 14 (a major \
+version those packages do not support yet)."""
+
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2026-12-31
+reason = """minimatch 9.x/10.x: denial of service from crafted glob patterns. Reached via \
+@nx/devkit and @swc/cli, which only match patterns written in this repository's own \
+config; no user input reaches them. Fix is minimatch 11 (a major version those packages \
+do not support yet)."""
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2026-12-31
+reason = """deepmerge 4.3.1: prototype poisoning of merged objects. No fixed version exists. \
+Reached via the shadcn CLI, fork-ts-checker (through @nx/web) and jest-config, which \
+merge this repository's own config files at build time; never in shipped code."""
