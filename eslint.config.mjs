@@ -46,8 +46,10 @@ export default [
               onlyDependOnLibsWithTags: ['type:shared', 'type:domain'],
             },
             {
+              // The web app uses the domain's pure rules too: the salary-change preview runs the
+              // same bandMetrics as the server (frontend.md → 2.5).
               sourceTag: 'type:web',
-              onlyDependOnLibsWithTags: ['type:shared'],
+              onlyDependOnLibsWithTags: ['type:shared', 'type:domain'],
             },
             {
               // Pure business rules: no frameworks, no libraries, no other projects.
