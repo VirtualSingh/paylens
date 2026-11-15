@@ -106,7 +106,7 @@ and the breakdown query in `docs/perf.md`.
 - Annualisation: `annual = monthly × 12`; `annual = annual × 1`. Hourly is out of scope (ADR-004).
 - Conversion: `reporting = round_half_even(local_minor × rate(local→reporting, as_of))`, where
   `rate(a→b)` is derived from USD-based rates: `rate(a→b) = rate(USD→b) / rate(USD→a)`.
-  Use a decimal library (e.g. `big.js`) for the multiplication; result back to `bigint`.
+  Computed as one exact fraction of bigints (no decimal library), rounded half-even once (ADR-004).
 - Rate selection: the latest `fx_rates.as_of <= requested date`; if none, the metric is
   reported as "unavailable", never silently 0 or 1.
 - Totals are summed in minor units of the reporting currency after per-row conversion
