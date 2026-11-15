@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   EMPLOYEE_STATUSES,
+  EMPLOYMENT_TYPES,
+  type EmploymentType,
+  type Gender,
+  GENDERS,
   type EmployeeDirectoryQuery,
   type EmployeeSortField,
   type EmployeeStatus,
@@ -68,10 +72,7 @@ export class EmployeesRepository {
       selectRows(
         this.db,
         sql`${directory}
-          select id::text, employee_code, first_name, last_name, work_email, country_code,
-                 department_code, department_name, level_code, job_title, status::text,
-                 hire_date::text, amount_minor::text, currency_code, pay_frequency::text,
-                 min_minor::text, mid_minor::text, max_minor::text, band_currency
+          select ${DIRECTORY_COLUMNS}
           from ranked
           ${where}
           ${orderBy(query.sort)}
@@ -84,7 +85,44 @@ export class EmployeesRepository {
       rows: pageRows.map(toDirectoryRow),
     };
   }
+
+  /** One person with the same current pay as the directory, plus profile details. */
+  async findById(id: string): Promise<ProfileRow | null> {
+    const rows = await selectRows(
+      this.db,
+      sql`${directoryCte('USD')}
+        select ${DIRECTORY_COLUMNS}, job_family_code, job_family_name,
+               employment_type::text, fte::text, termination_date::text, gender::text,
+               version, manager_id::text, manager_code, manager_name
+        from ranked
+        where id = ${id}`,
+    );
+    const row = rows[0];
+    return row === undefined ? null : toProfileRow(row);
+  }
 }
+
+/** A profile row: the directory row plus the details only the profile shows. */
+export interface ProfileRow extends DirectoryRow {
+  readonly jobFamilyCode: string;
+  readonly jobFamilyName: string;
+  readonly employmentType: EmploymentType;
+  readonly fte: string;
+  readonly terminationDate: string | null;
+  readonly gender: Gender;
+  readonly version: number;
+  readonly manager: {
+    readonly id: string;
+    readonly employeeCode: string;
+    readonly name: string;
+  } | null;
+}
+
+const DIRECTORY_COLUMNS = sql`
+  id::text, employee_code, first_name, last_name, work_email, country_code,
+  department_code, department_name, level_code, job_title, status::text,
+  hire_date::text, amount_minor::text, currency_code, pay_frequency::text,
+  min_minor::text, mid_minor::text, max_minor::text, band_currency`;
 
 /**
  * Everyone with today's salary and band, plus three derived columns used only for filtering
@@ -104,12 +142,17 @@ function directoryCte(reportingCurrency: string): SQL {
              d.code as department_code, d.name as department_name,
              l.code as level_code, l.rank as level_rank,
              e.job_title, e.status, e.hire_date, e.manager_id,
+             f.code as job_family_code, f.name as job_family_name,
+             e.employment_type, e.fte, e.termination_date, e.gender, e.version,
+             m.employee_code as manager_code, m.first_name || ' ' || m.last_name as manager_name,
              s.amount_minor, s.currency_code, s.pay_frequency,
              s.amount_minor * (case s.pay_frequency when 'monthly' then 12 else 1 end) as annual_local,
              b.min_minor, b.mid_minor, b.max_minor, b.currency_code as band_currency
       from employees e
       join departments d on d.id = e.department_id
+      join job_families f on f.id = e.job_family_id
       join job_levels l on l.id = e.job_level_id
+      left join employees m on m.id = e.manager_id
       left join current_salaries s on s.employee_id = e.id
       left join pay_bands b
         on b.job_level_id = e.job_level_id
@@ -216,6 +259,28 @@ function toDirectoryRow(row: Row): DirectoryRow {
             midMinor: column.bigint(row, 'mid_minor'),
             maxMinor: column.bigint(row, 'max_minor'),
             currency: column.text(row, 'band_currency'),
+          },
+  };
+}
+
+function toProfileRow(row: Row): ProfileRow {
+  const managerId = column.textOrNull(row, 'manager_id');
+  return {
+    ...toDirectoryRow(row),
+    jobFamilyCode: column.text(row, 'job_family_code'),
+    jobFamilyName: column.text(row, 'job_family_name'),
+    employmentType: column.oneOf(row, 'employment_type', EMPLOYMENT_TYPES),
+    fte: column.text(row, 'fte'),
+    terminationDate: column.textOrNull(row, 'termination_date'),
+    gender: column.oneOf(row, 'gender', GENDERS),
+    version: column.number(row, 'version'),
+    manager:
+      managerId === null
+        ? null
+        : {
+            id: managerId,
+            employeeCode: column.text(row, 'manager_code'),
+            name: column.text(row, 'manager_name'),
           },
   };
 }

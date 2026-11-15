@@ -5,9 +5,13 @@ import {
   type IsoDate,
   Money,
 } from '@paylens/domain';
-import type { EmployeeListItem, EmployeePay } from '@paylens/shared';
+import type {
+  EmployeeListItem,
+  EmployeePay,
+  EmployeeProfile,
+} from '@paylens/shared';
 import { toMoneyJson } from '../common/money-json.js';
-import type { DirectoryRow } from './employees.repository.js';
+import type { DirectoryRow, ProfileRow } from './employees.repository.js';
 
 export interface DirectoryContext {
   readonly fx: FxTable;
@@ -85,5 +89,22 @@ function payOf(
     compaRatio: metrics?.compaRatio ?? null,
     rangePenetration: metrics?.rangePenetration ?? null,
     bandPosition: metrics?.position ?? null,
+  };
+}
+
+/** The profile: the directory item plus details; gender only for readers who see pay. */
+export function toProfile(
+  row: ProfileRow,
+  context: DirectoryContext,
+): EmployeeProfile {
+  return {
+    ...toDirectoryItem(row, context),
+    jobFamily: { code: row.jobFamilyCode, name: row.jobFamilyName },
+    employmentType: row.employmentType,
+    fte: row.fte,
+    terminationDate: row.terminationDate,
+    manager: row.manager,
+    ...(context.showPay && { gender: row.gender }),
+    version: row.version,
   };
 }

@@ -3,6 +3,8 @@ import { MoneyJsonSchema } from '../money/money-json.schema.js';
 import {
   BAND_POSITIONS,
   EMPLOYEE_STATUSES,
+  EMPLOYMENT_TYPES,
+  GENDERS,
   PAY_FREQUENCIES,
 } from './employee-enums.js';
 
@@ -62,3 +64,22 @@ export function pageOf<Item extends z.ZodType>(item: Item) {
 
 export const EmployeeDirectoryPageSchema = pageOf(EmployeeListItemSchema);
 export type EmployeeDirectoryPage = z.infer<typeof EmployeeDirectoryPageSchema>;
+
+/** One person's profile (ui-screens.md → Employee profile). */
+export const EmployeeProfileSchema = EmployeeListItemSchema.extend({
+  jobFamily: z.object({ code: z.string(), name: z.string() }),
+  employmentType: z.enum(EMPLOYMENT_TYPES),
+  fte: z.string(),
+  terminationDate: z.string().nullable(),
+  manager: z
+    .object({ id: z.uuid(), employeeCode: z.string(), name: z.string() })
+    .nullable(),
+  /** Only for HR managers and admins; used for pay-gap analysis (security.md). */
+  gender: z.enum(GENDERS).optional(),
+  /** Optimistic-locking version; also sent as the ETag header (api.md → Concurrency). */
+  version: z.number().int(),
+});
+export type EmployeeProfile = z.infer<typeof EmployeeProfileSchema>;
+
+/** `:id` in /employees/:id routes. */
+export const EmployeeIdParamsSchema = z.object({ id: z.uuid() });
