@@ -56,3 +56,16 @@ export const CreateEmployeeRequestSchema = z.object({
   }),
 });
 export type CreateEmployeeRequest = z.infer<typeof CreateEmployeeRequestSchema>;
+
+/**
+ * `PATCH /employees/:id` — any of the employment details, with If-Match. Strict: country and
+ * hire date are fixed, and status has its own endpoint, so sending them is an error rather
+ * than something silently ignored.
+ */
+export const UpdateEmployeeRequestSchema = z
+  .strictObject(EmploymentDetails)
+  .partial()
+  .refine((edit) => Object.values(edit).some((value) => value !== undefined), {
+    message: 'Send at least one field to change',
+  });
+export type UpdateEmployeeRequest = z.infer<typeof UpdateEmployeeRequestSchema>;

@@ -1,4 +1,36 @@
-import { CreateEmployeeRequestSchema } from './employee-write.schema.js';
+import {
+  CreateEmployeeRequestSchema,
+  UpdateEmployeeRequestSchema,
+} from './employee-write.schema.js';
+
+describe('UpdateEmployeeRequestSchema', () => {
+  it('accepts an edit of a single field', () => {
+    expect(
+      UpdateEmployeeRequestSchema.parse({ jobTitle: ' Staff Engineer ' }),
+    ).toEqual({ jobTitle: 'Staff Engineer' });
+  });
+
+  it('accepts null as "reports to nobody"', () => {
+    expect(UpdateEmployeeRequestSchema.parse({ managerId: null })).toEqual({
+      managerId: null,
+    });
+  });
+
+  it('rejects an edit with nothing in it', () => {
+    expect(UpdateEmployeeRequestSchema.safeParse({}).success).toBe(false);
+  });
+
+  it.each([
+    ['country', { countryCode: 'GB' }],
+    ['hire date', { hireDate: '2020-01-01' }],
+    ['status, which has its own endpoint', { status: 'terminated' }],
+  ])('refuses to change the %s here', (_case, field) => {
+    expect(
+      UpdateEmployeeRequestSchema.safeParse({ jobTitle: 'Staff', ...field })
+        .success,
+    ).toBe(false);
+  });
+});
 
 describe('CreateEmployeeRequestSchema', () => {
   const valid = {
