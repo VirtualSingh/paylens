@@ -1,7 +1,12 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import helmet from 'helmet';
+// Namespace import on purpose: helmet ships separate ESM and CommonJS typings without
+// "types" export conditions, and Vercel's deploy-time compile picks the CommonJS ones, where
+// a default import is the whole module object. `.default` is the helmet function in both.
+import * as helmetModule from 'helmet';
 import { ProblemDetailsFilter } from './common/problem-details.filter.js';
+
+const helmet = helmetModule.default;
 import { requestIdMiddleware } from './common/request-id.middleware.js';
 
 export interface AppOptions {
