@@ -1,10 +1,12 @@
 import { Controller, Get, type INestApplication, Query } from '@nestjs/common';
 import { type PaginationQuery, PaginationQuerySchema } from '@paylens/shared';
 import request from 'supertest';
+import { Public } from '../auth/access.decorators.js';
 import { createTestApp } from '../testing/create-test-app.js';
 import { ZodValidationPipe } from './zod-validation.pipe.js';
 
 @Controller('test-validation')
+@Public()
 class EchoController {
   @Get()
   echo(

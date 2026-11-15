@@ -7,11 +7,13 @@ import {
 } from '@nestjs/common';
 import { EffectiveDateNotAfterCurrentError } from '@paylens/domain';
 import request from 'supertest';
+import { Public } from '../auth/access.decorators.js';
 import { createTestApp } from '../testing/create-test-app.js';
 
 const SECRET = 'postgres://paylens:hunter2@db.internal/paylens';
 
 @Controller('test-failures')
+@Public()
 class FailingController {
   @Get('bug')
   bug(): never {
