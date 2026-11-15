@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Money, planSalaryChange, type SalaryRecord } from '@paylens/domain';
 import type {
   SalaryChangeRequest,
@@ -54,15 +49,11 @@ export class SalariesService {
     requestId: string | null,
   ): Promise<SalaryChangeResult> {
     const { inserted, version } = await this.db.transaction(async (tx) => {
-      const employee = await this.employees.lockForChange(tx, employeeId);
-      if (employee === null) {
-        throw new NotFoundException('There is no employee with this id');
-      }
-      if (employee.version !== expectedVersion) {
-        throw new ConflictException(
-          'This record changed since you opened it. Reload to continue.',
-        );
-      }
+      const employee = await this.people.lockAtVersion(
+        tx,
+        employeeId,
+        expectedVersion,
+      );
 
       const history = await this.salaries.history(employeeId, tx);
       const plan = planSalaryChange(

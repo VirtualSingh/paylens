@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   type EmployeeDirectoryPage,
   type EmployeeDirectoryQuery,
@@ -7,6 +11,7 @@ import {
 } from '@paylens/shared';
 import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 import { Clock } from '../common/clock.js';
+import type { Database } from '../db/database.js';
 import { FxRepository } from '../fx/fx.repository.js';
 import {
   type DirectoryContext,
@@ -56,6 +61,29 @@ export class EmployeesService {
       throw new NotFoundException('There is no employee with this id');
     }
     return toProfile(row, context);
+  }
+
+  /**
+   * The first step of every change to a person (optimistic locking, api.md → Concurrency):
+   * lock their row for the rest of the transaction, so changes queue instead of interleaving,
+   * then check they are still at the version the client loaded. 404 if they do not exist,
+   * 409 if someone changed them since.
+   */
+  async lockAtVersion(
+    tx: Database,
+    id: string,
+    expectedVersion: number,
+  ): Promise<{ readonly version: number; readonly currencyCode: string }> {
+    const locked = await this.employees.lockForChange(tx, id);
+    if (locked === null) {
+      throw new NotFoundException('There is no employee with this id');
+    }
+    if (locked.version !== expectedVersion) {
+      throw new ConflictException(
+        'This record changed since you opened it. Reload to continue.',
+      );
+    }
+    return locked;
   }
 
   private async contextFor(

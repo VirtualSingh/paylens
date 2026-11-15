@@ -137,15 +137,10 @@ export class EmployeeChangesService {
     requestId: string | null,
   ): Promise<EmployeeProfile> {
     await this.db.transaction(async (tx) => {
-      const locked = await this.employees.lockForChange(tx, id);
+      await this.people.lockAtVersion(tx, id, expectedVersion);
       const current = await this.employees.editableFields(tx, id);
-      if (locked === null || current === null) {
+      if (current === null) {
         throw new NotFoundException('There is no employee with this id');
-      }
-      if (locked.version !== expectedVersion) {
-        throw new ConflictException(
-          'This record changed since you opened it. Reload to continue.',
-        );
       }
 
       const { before, after } = differences(current, request);
