@@ -86,6 +86,41 @@ export class EmployeesRepository {
     };
   }
 
+  /**
+   * Locks one person for a change (SELECT … FOR UPDATE inside the caller's transaction), so
+   * two changes to the same person run one after the other. Returns the version the change
+   * must match and the currency salaries are paid in there.
+   */
+  async lockForChange(
+    tx: Database,
+    id: string,
+  ): Promise<{ version: number; currencyCode: string } | null> {
+    const rows = await selectRows(
+      tx,
+      sql`select e.version, c.currency_code
+          from employees e join countries c on c.code = e.country_code
+          where e.id = ${id}
+          for update of e`,
+    );
+    const row = rows[0];
+    return row === undefined
+      ? null
+      : {
+          version: column.number(row, 'version'),
+          currencyCode: column.text(row, 'currency_code'),
+        };
+  }
+
+  /** Records that the person changed; the new version is the next ETag. */
+  async bumpVersion(tx: Database, id: string): Promise<number> {
+    const rows = await selectRows(
+      tx,
+      sql`update employees set version = version + 1, updated_at = now()
+          where id = ${id} returning version`,
+    );
+    return column.number(rows[0] ?? { version: Number.NaN }, 'version');
+  }
+
   /** One person with the same current pay as the directory, plus profile details. */
   async findById(id: string): Promise<ProfileRow | null> {
     const rows = await selectRows(

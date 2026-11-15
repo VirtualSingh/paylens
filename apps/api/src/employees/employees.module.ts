@@ -8,5 +8,7 @@ import { EmployeesService } from './employees.service.js';
   imports: [FxModule],
   controllers: [EmployeesController],
   providers: [EmployeesService, EmployeesRepository],
+  // The salary change locks the person and reports their pay afterwards.
+  exports: [EmployeesService, EmployeesRepository],
 })
 export class EmployeesModule {}

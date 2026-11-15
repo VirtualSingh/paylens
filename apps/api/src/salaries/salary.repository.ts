@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { SalaryChangePlan } from '@paylens/domain';
 import {
   PAY_FREQUENCIES,
   type PayFrequencyName,
@@ -44,6 +45,43 @@ export class SalaryRepository {
           order by effective_from desc, created_at desc`,
     );
     return rows.map(toSalaryRecordRow);
+  }
+
+  /**
+   * Executes a plan from libs/domain inside the caller's transaction: closing records is the
+   * only update history ever gets; the new record is an insert. The exclusion constraint in
+   * the database still guards against any overlap.
+   */
+  async applyPlan(
+    tx: Database,
+    employeeId: string,
+    plan: SalaryChangePlan,
+    createdBy: string | null,
+  ): Promise<SalaryRecordRow> {
+    for (const closing of plan.close) {
+      await tx.execute(
+        sql`update salary_records set effective_to = ${closing.effectiveTo}
+            where id = ${closing.recordId} and employee_id = ${employeeId}`,
+      );
+    }
+    const { insert } = plan;
+    const rows = await selectRows(
+      tx,
+      sql`insert into salary_records (employee_id, amount_minor, currency_code, pay_frequency,
+                                       effective_from, effective_to, reason, note, created_by)
+          values (${employeeId}, ${insert.amount.amountMinor.toString()}::bigint,
+                  ${insert.amount.currency}, ${insert.frequency}::pay_frequency,
+                  ${insert.effectiveFrom}, ${insert.effectiveTo},
+                  ${insert.reason}::salary_reason, ${insert.note}, ${createdBy})
+          returning id::text, amount_minor::text, currency_code, pay_frequency::text,
+                    effective_from::text, effective_to::text, reason::text, note,
+                    to_json(created_at) #>> '{}' as created_at`,
+    );
+    const row = rows[0];
+    if (row === undefined) {
+      throw new Error('The new salary record was not returned');
+    }
+    return toSalaryRecordRow(row);
   }
 }
 
