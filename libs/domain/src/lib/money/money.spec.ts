@@ -37,3 +37,42 @@ describe('Money.subtract', () => {
     expect(() => pounds.subtract(dollars)).toThrow(CurrencyMismatchError);
   });
 });
+
+describe('Money.multiplyRatio', () => {
+  it('scales by an exact ratio, e.g. a 10% raise is 110/100', () => {
+    const salary = Money.of(1_000_000n, 'EUR');
+
+    const raised = salary.multiplyRatio(110n, 100n);
+
+    expect(raised).toEqual(Money.of(1_100_000n, 'EUR'));
+  });
+
+  it('rounds the result half-even to whole minor units', () => {
+    const salary = Money.of(1_000_005n, 'EUR');
+
+    const raised = salary.multiplyRatio(110n, 100n);
+
+    // 1_100_005.5 → the even neighbour, 1_100_006
+    expect(raised).toEqual(Money.of(1_100_006n, 'EUR'));
+  });
+});
+
+describe('Money.format', () => {
+  it('formats minor units as a localised currency amount, without floating point', () => {
+    const salary = Money.of(285_000_000n, 'INR');
+
+    expect(salary.format('en-IN')).toBe('₹28,50,000.00');
+  });
+
+  it('respects currencies without minor units', () => {
+    const salary = Money.of(5_400_000n, 'JPY');
+
+    expect(salary.format('en-US')).toBe('¥5,400,000');
+  });
+
+  it('keeps every digit of amounts beyond floating-point precision', () => {
+    const huge = Money.of(123_456_789_012_345_678n, 'USD');
+
+    expect(huge.format('en-US')).toBe('$1,234,567,890,123,456.78');
+  });
+});
