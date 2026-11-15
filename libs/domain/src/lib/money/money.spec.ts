@@ -76,3 +76,11 @@ describe('Money.format', () => {
     expect(huge.format('en-US')).toBe('$1,234,567,890,123,456.78');
   });
 });
+
+describe('Money.format with negative amounts', () => {
+  it('shows a negative delta with its sign', () => {
+    const cut = Money.of(-5n, 'USD');
+
+    expect(cut.format('en-US')).toBe('-$0.05');
+  });
+});
