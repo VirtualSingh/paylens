@@ -3,7 +3,10 @@ import { AuthModule } from './auth/auth.module.js';
 import { ClockModule } from './common/clock.js';
 import { DatabaseModule } from './db/database.module.js';
 import { EmployeesModule } from './employees/employees.module.js';
+import { FxModule } from './fx/fx.module.js';
 import { HealthModule } from './health/health.module.js';
+import { PayBandsModule } from './pay-bands/pay-bands.module.js';
+import { ReferenceModule } from './reference/reference.module.js';
 import { SalariesModule } from './salaries/salaries.module.js';
 
 @Module({
@@ -14,6 +17,9 @@ import { SalariesModule } from './salaries/salaries.module.js';
     HealthModule,
     EmployeesModule,
     SalariesModule,
+    ReferenceModule,
+    PayBandsModule,
+    FxModule,
   ],
 })
 export class AppModule {}
