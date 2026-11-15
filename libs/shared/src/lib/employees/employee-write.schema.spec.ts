@@ -1,5 +1,6 @@
 import {
   CreateEmployeeRequestSchema,
+  EmployeeStatusChangeRequestSchema,
   UpdateEmployeeRequestSchema,
 } from './employee-write.schema.js';
 
@@ -86,5 +87,29 @@ describe('CreateEmployeeRequestSchema', () => {
     expect(
       CreateEmployeeRequestSchema.safeParse({ ...valid, ...change }).success,
     ).toBe(false);
+  });
+});
+
+describe('EmployeeStatusChangeRequestSchema', () => {
+  it('accepts a status and the date it takes effect', () => {
+    expect(
+      EmployeeStatusChangeRequestSchema.parse({
+        status: 'terminated',
+        effectiveDate: '2026-12-31',
+      }),
+    ).toEqual({ status: 'terminated', effectiveDate: '2026-12-31' });
+  });
+
+  it.each([
+    ['an unknown status', { status: 'retired', effectiveDate: '2026-12-31' }],
+    ['a missing date', { status: 'on_leave' }],
+    [
+      'a date that is not YYYY-MM-DD',
+      { status: 'on_leave', effectiveDate: '31/12/2026' },
+    ],
+  ])('rejects %s', (_case, body) => {
+    expect(EmployeeStatusChangeRequestSchema.safeParse(body).success).toBe(
+      false,
+    );
   });
 });

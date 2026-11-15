@@ -5,6 +5,7 @@ import {
   LevelCodeSchema,
 } from '../reference/reference.schema.js';
 import {
+  EMPLOYEE_STATUSES,
   EMPLOYMENT_TYPES,
   GENDERS,
   PAY_FREQUENCIES,
@@ -71,3 +72,15 @@ export const UpdateEmployeeRequestSchema = z
     message: 'Send at least one field to change',
   });
 export type UpdateEmployeeRequest = z.infer<typeof UpdateEmployeeRequestSchema>;
+
+/**
+ * `POST /employees/:id/status` — leave, return or termination (F-11), with If-Match. For a
+ * termination the date is the termination date; the open salary record closes on it.
+ */
+export const EmployeeStatusChangeRequestSchema = z.object({
+  status: z.enum(EMPLOYEE_STATUSES),
+  effectiveDate: z.iso.date(),
+});
+export type EmployeeStatusChangeRequest = z.infer<
+  typeof EmployeeStatusChangeRequestSchema
+>;
