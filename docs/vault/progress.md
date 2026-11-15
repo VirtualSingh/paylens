@@ -28,11 +28,12 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Now (next 3 steps)
 
-1. Pushpendra: unlock GitHub Actions billing (see Blockers), then re-run CI and fix anything red.
-2. api tests: set `isolate: false` in `apps/api/vitest.config.mts` (measured 20 s → 12.6 s);
-   commit as `perf(api): …`. Then Phase 0 exit check `pnpm test` < 20 s.
-3. Phase 0 · 0.6 — restart Claude Code, Vercel + Neon browser logins, create projects, deploy,
-   run `pnpm db:migrate` against Neon (first real run of it), record URLs here.
+1. Pushpendra: unlock GitHub *account* billing (see Blockers) — still locked at run
+   43680916033 (aab7c68) after Actions were enabled on the repo. Then re-run CI, fix anything red.
+2. Phase 0 · 0.6 — create Neon project + Vercel projects, deploy, run `pnpm db:migrate`
+   against Neon, record URLs here. CLIs are signed in (vercel: virtualsingh, hobby team
+   `virtualsinghs-projects`; neon: Pushpendra); MCP tools load after the pending restart.
+3. Phase 0 exit check: `pnpm test` time on a quiet machine (api now `isolate: false`, aab7c68).
 
 ## Next (this phase)
 
@@ -98,7 +99,7 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
   Needs Pushpendra at https://github.com/settings/billing (resolve the payment/spending
   issue). Public repos normally run Actions free. Until then "CI green" cannot be shown.
 - ~~Docker not installed~~ — resolved 2026-11-15 (Docker Desktop 29.9.3).
-- Vercel and Neon MCP servers need Pushpendra's OAuth sign-in (`/mcp`) before task 0.6.
+- ~~Vercel and Neon MCP OAuth~~ — done by Pushpendra 2026-11-15; tools appear after a restart.
 
 ## Review notes from Pushpendra (agent addresses these first)
 
