@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { PaginationQuerySchema } from '../pagination/pagination-query.schema.js';
+import {
+  CountryCodeSchema,
+  CurrencyCodeSchema,
+  LevelCodeSchema,
+} from '../reference/reference.schema.js';
 import { BAND_POSITIONS, EMPLOYEE_STATUSES } from './employee-enums.js';
 
 /** Columns the directory may be sorted by (api.md → sort allowlist). */
@@ -47,17 +52,14 @@ const SortSchema = z.preprocess(
 export const EmployeeDirectoryQuerySchema = PaginationQuerySchema.extend({
   /** Free text over name and employee code (trigram search). */
   q: z.string().trim().min(2).max(100).optional(),
-  country: listOf(z.string().regex(/^[A-Z]{2}$/)),
+  country: listOf(CountryCodeSchema),
   department: listOf(z.string().min(1).max(32)),
-  level: listOf(z.string().regex(/^(IC[1-6]|M[1-4])$/)),
+  level: listOf(LevelCodeSchema),
   status: listOf(z.enum(EMPLOYEE_STATUSES)),
   bandPosition: listOf(z.enum(BAND_POSITIONS)),
   managerId: z.uuid().optional(),
   sort: SortSchema.default([{ field: 'lastName', direction: 'asc' }]),
-  reportingCurrency: z
-    .string()
-    .regex(/^[A-Z]{3}$/)
-    .default('USD'),
+  reportingCurrency: CurrencyCodeSchema.default('USD'),
 });
 
 export type EmployeeDirectoryQuery = z.infer<
