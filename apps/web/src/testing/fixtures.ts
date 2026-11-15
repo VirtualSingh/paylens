@@ -39,8 +39,9 @@ const inr = (rupees: number) => ({
   amountMinor: String(rupees * 100),
   currency: 'INR',
 });
-const usd = (dollars: number) => ({
-  amountMinor: String(dollars * 100),
+/** Integer cents: converted figures are rarely whole dollars, and floats would drift. */
+const usdCents = (cents: number) => ({
+  amountMinor: String(cents),
   currency: 'USD',
 });
 
@@ -64,7 +65,7 @@ export const mehtaListItem: EmployeeDirectoryPage['data'][number] = {
     salary: inr(2_850_000),
     frequency: 'annual',
     annualLocal: inr(2_850_000),
-    annualReporting: { money: usd(34_337.35), asOf: '2026-11-01' },
+    annualReporting: { money: usdCents(3_433_735), asOf: '2026-11-01' },
     band: { min: inr(2_400_000), mid: inr(3_000_000), max: inr(3_600_000) },
     compaRatio: 0.95,
     rangePenetration: 0.375,
@@ -86,7 +87,7 @@ export const guptaListItem: EmployeeDirectoryPage['data'][number] = {
     salary: inr(2_200_000),
     frequency: 'annual',
     annualLocal: inr(2_200_000),
-    annualReporting: { money: usd(26_506.02), asOf: '2026-11-01' },
+    annualReporting: { money: usdCents(2_650_602), asOf: '2026-11-01' },
     band: { min: inr(2_400_000), mid: inr(3_000_000), max: inr(3_600_000) },
     compaRatio: 0.7333,
     rangePenetration: -0.1667,

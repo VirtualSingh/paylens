@@ -63,6 +63,8 @@ describe('App shell', () => {
       await screen.findByRole('searchbox', { name: 'Search people' }),
       'mehta{Enter}',
     );
+    // The directory's code loads lazily; the router moves once it has.
+    await screen.findByRole('heading', { name: 'People' });
 
     expect(router.state.location.pathname).toBe('/people');
     expect(router.state.location.search).toBe('?q=mehta');
