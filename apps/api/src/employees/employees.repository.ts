@@ -1,0 +1,221 @@
+import { Inject, Injectable } from '@nestjs/common';
+import {
+  EMPLOYEE_STATUSES,
+  type EmployeeDirectoryQuery,
+  type EmployeeSortField,
+  type EmployeeStatus,
+  PAY_FREQUENCIES,
+  type PayFrequencyName,
+} from '@paylens/shared';
+import { type SQL, sql } from 'drizzle-orm';
+import { type Database, DATABASE } from '../db/database.js';
+import { column, type Row, selectRows } from '../db/select-rows.js';
+
+/** One directory row as stored: money stays in local currency; the service converts it. */
+export interface DirectoryRow {
+  readonly id: string;
+  readonly employeeCode: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly workEmail: string;
+  readonly countryCode: string;
+  readonly departmentCode: string;
+  readonly departmentName: string;
+  readonly levelCode: string;
+  readonly jobTitle: string;
+  readonly status: EmployeeStatus;
+  readonly hireDate: string;
+  readonly salary: {
+    readonly amountMinor: bigint;
+    readonly currency: string;
+    readonly frequency: PayFrequencyName;
+  } | null;
+  readonly band: {
+    readonly minMinor: bigint;
+    readonly midMinor: bigint;
+    readonly maxMinor: bigint;
+    readonly currency: string;
+  } | null;
+}
+
+/** Sort fields map to fixed SQL; nothing the client sends is ever spliced into the query. */
+const SORT_EXPRESSIONS: Readonly<Record<EmployeeSortField, readonly SQL[]>> = {
+  lastName: [sql`lower(last_name)`, sql`lower(first_name)`],
+  hireDate: [sql`hire_date`],
+  country: [sql`country_code`],
+  department: [sql`department_name`],
+  level: [sql`level_rank`, sql`level_code`],
+  annualReporting: [sql`annual_reporting`],
+  compaRatio: [sql`compa_ratio`],
+};
+
+@Injectable()
+export class EmployeesRepository {
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  /** The directory: filters, sort and one page, plus the number of matches (api.md). */
+  async search(
+    query: EmployeeDirectoryQuery,
+  ): Promise<{ rows: DirectoryRow[]; total: number }> {
+    const directory = directoryCte(query.reportingCurrency);
+    const where = whereClause(query);
+
+    const [countRows, pageRows] = await Promise.all([
+      selectRows(
+        this.db,
+        sql`${directory} select count(*)::int as total from ranked ${where}`,
+      ),
+      selectRows(
+        this.db,
+        sql`${directory}
+          select id::text, employee_code, first_name, last_name, work_email, country_code,
+                 department_code, department_name, level_code, job_title, status::text,
+                 hire_date::text, amount_minor::text, currency_code, pay_frequency::text,
+                 min_minor::text, mid_minor::text, max_minor::text, band_currency
+          from ranked
+          ${where}
+          ${orderBy(query.sort)}
+          limit ${query.pageSize} offset ${(query.page - 1) * query.pageSize}`,
+      ),
+    ]);
+
+    return {
+      total: column.number(countRows[0] ?? { total: 0 }, 'total'),
+      rows: pageRows.map(toDirectoryRow),
+    };
+  }
+}
+
+/**
+ * Everyone with today's salary and band, plus three derived columns used only for filtering
+ * and sorting. Displayed figures are computed in libs/domain (exact, half-even rounding).
+ */
+function directoryCte(reportingCurrency: string): SQL {
+  return sql`
+    with latest_fx as (
+      -- the latest USD-based rate per currency on or before today
+      select distinct on (quote_currency) quote_currency, rate
+      from fx_rates
+      where as_of <= current_date
+      order by quote_currency, as_of desc
+    ),
+    people as (
+      select e.id, e.employee_code, e.first_name, e.last_name, e.work_email, e.country_code,
+             d.code as department_code, d.name as department_name,
+             l.code as level_code, l.rank as level_rank,
+             e.job_title, e.status, e.hire_date, e.manager_id,
+             s.amount_minor, s.currency_code, s.pay_frequency,
+             s.amount_minor * (case s.pay_frequency when 'monthly' then 12 else 1 end) as annual_local,
+             b.min_minor, b.mid_minor, b.max_minor, b.currency_code as band_currency
+      from employees e
+      join departments d on d.id = e.department_id
+      join job_levels l on l.id = e.job_level_id
+      left join current_salaries s on s.employee_id = e.id
+      left join pay_bands b
+        on b.job_level_id = e.job_level_id
+       and b.country_code = e.country_code
+       and b.effective_from <= current_date
+       and (b.effective_to is null or b.effective_to > current_date)
+    ),
+    ranked as (
+      select p.*,
+             p.annual_local::numeric
+               * (case when ${reportingCurrency} = 'USD' then 1 else reporting_fx.rate end)
+               / (case when p.currency_code = 'USD' then 1 else local_fx.rate end)
+               as annual_reporting,
+             p.annual_local::numeric / p.mid_minor as compa_ratio,
+             case
+               when p.annual_local is null or p.min_minor is null then null
+               when p.annual_local < p.min_minor then 'below'
+               when p.annual_local > p.max_minor then 'above'
+               else 'within'
+             end as band_position
+      from people p
+      left join latest_fx local_fx on local_fx.quote_currency = p.currency_code
+      left join latest_fx reporting_fx on reporting_fx.quote_currency = ${reportingCurrency}
+    )`;
+}
+
+function whereClause(query: EmployeeDirectoryQuery): SQL {
+  const conditions: SQL[] = [];
+  if (query.q !== undefined) {
+    const pattern = `%${escapeLikePattern(query.q)}%`;
+    conditions.push(
+      sql`(first_name || ' ' || last_name || ' ' || employee_code ilike ${pattern}
+           or work_email ilike ${pattern})`,
+    );
+  }
+  const anyOf = (columnName: SQL, values: readonly string[]) => {
+    if (values.length > 0) {
+      conditions.push(
+        sql`${columnName} in (${sql.join(
+          values.map((value) => sql`${value}`),
+          sql`, `,
+        )})`,
+      );
+    }
+  };
+  anyOf(sql`country_code`, query.country);
+  anyOf(sql`department_code`, query.department);
+  anyOf(sql`level_code`, query.level);
+  anyOf(sql`status::text`, query.status);
+  anyOf(sql`band_position`, query.bandPosition);
+  if (query.managerId !== undefined) {
+    conditions.push(sql`manager_id = ${query.managerId}`);
+  }
+  return conditions.length === 0
+    ? sql``
+    : sql`where ${sql.join(conditions, sql` and `)}`;
+}
+
+function orderBy(sort: EmployeeDirectoryQuery['sort']): SQL {
+  const terms = sort.flatMap(({ field, direction }) =>
+    SORT_EXPRESSIONS[field].map(
+      (expression) =>
+        sql`${expression} ${direction === 'desc' ? sql`desc` : sql`asc`} nulls last`,
+    ),
+  );
+  // employee_code makes the order total, so pages never repeat or skip a row.
+  return sql`order by ${sql.join([...terms, sql`employee_code asc`], sql`, `)}`;
+}
+
+/** In LIKE patterns `%` and `_` are wildcards; a search for them means the characters. */
+function escapeLikePattern(text: string): string {
+  return text.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
+function toDirectoryRow(row: Row): DirectoryRow {
+  const amount = column.textOrNull(row, 'amount_minor');
+  const bandMin = column.textOrNull(row, 'min_minor');
+  return {
+    id: column.text(row, 'id'),
+    employeeCode: column.text(row, 'employee_code'),
+    firstName: column.text(row, 'first_name'),
+    lastName: column.text(row, 'last_name'),
+    workEmail: column.text(row, 'work_email'),
+    countryCode: column.text(row, 'country_code'),
+    departmentCode: column.text(row, 'department_code'),
+    departmentName: column.text(row, 'department_name'),
+    levelCode: column.text(row, 'level_code'),
+    jobTitle: column.text(row, 'job_title'),
+    status: column.oneOf(row, 'status', EMPLOYEE_STATUSES),
+    hireDate: column.text(row, 'hire_date'),
+    salary:
+      amount === null
+        ? null
+        : {
+            amountMinor: BigInt(amount),
+            currency: column.text(row, 'currency_code'),
+            frequency: column.oneOf(row, 'pay_frequency', PAY_FREQUENCIES),
+          },
+    band:
+      bandMin === null
+        ? null
+        : {
+            minMinor: BigInt(bandMin),
+            midMinor: column.bigint(row, 'mid_minor'),
+            maxMinor: column.bigint(row, 'max_minor'),
+            currency: column.text(row, 'band_currency'),
+          },
+  };
+}

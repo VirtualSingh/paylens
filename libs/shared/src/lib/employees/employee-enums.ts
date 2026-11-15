@@ -16,3 +16,6 @@ export const EMPLOYMENT_TYPES = [
   'contractor',
 ] as const;
 export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number];
+
+export const PAY_FREQUENCIES = ['annual', 'monthly'] as const;
+export type PayFrequencyName = (typeof PAY_FREQUENCIES)[number];
