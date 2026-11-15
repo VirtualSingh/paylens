@@ -32,6 +32,9 @@ with one line of reasoning. Pushpendra promotes items; the agent does not.
 - Employee self-service view ("my pay, my band, my history").
 - Scheduled reports (email a monthly pay summary), alerting on band breaches.
 - Localised UI (i18n) and accessibility audit by a third party.
+- Undo a termination entered by mistake, and a rehire linked to the person's earlier record
+  (v1: terminated is final, a rehire is a new employee — ADR-013).
+- Idempotency-Key on salary changes (api.md marks it "Phase 2 if time").
 
 ## Explicitly rejected (do not resurrect without a new ADR)
 

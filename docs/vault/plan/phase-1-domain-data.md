@@ -1,7 +1,7 @@
 ---
 title: Phase 1 — Domain + data (money, bands, schema, seed, employees & salary API)
-updated: 2026-11-14
-status: active
+updated: 2026-11-15
+status: done (2026-11-15)
 window: 2026-11-15 → 2026-11-16
 ---
 
@@ -73,11 +73,11 @@ Commits follow the F-09 example in [../design/testing.md](../design/testing.md).
 
 ## Exit checklist
 
-- [ ] Domain 100% covered; whole suite < 40 s; no network
-- [ ] DB rejects overlapping periods and invalid bands (tests prove it)
-- [ ] 10,000 employees seeded locally and on Neon; `generate.spec` distribution assertions green
-- [ ] Employees/salary endpoints documented in OpenAPI; `git log` shows test → feat → refactor cycles
-- [ ] ADR-004 (money), ADR-005 (effective dating) written; `progress.md` updated
+- [x] Domain 100% covered; no network · [ ] whole suite < 40 s (api 41.8 s — carried into Phase 2)
+- [x] DB rejects overlapping periods and invalid bands (tests prove it)
+- [x] 10,000 employees seeded locally (27.7 s) and on Neon (21.9 s); `generate.spec` distribution assertions green
+- [x] Employees/salary endpoints documented in OpenAPI (`docs/api/openapi.json`); `git log` shows test → feat → refactor cycles
+- [x] ADR-004 (money), ADR-005 (effective dating) written (+ ADR-013 employee lifecycle); `progress.md` updated
 
 ## Notes for the agent
 

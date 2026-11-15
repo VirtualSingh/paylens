@@ -70,3 +70,17 @@ Template:
   fix → pin → accept-with-expiry with written reasons (ADR-012).
 - README still needs: human rejections of AI proposals — one so far (the attribution trailer).
 - Commits: 0040267 … f61cd4f (+ this wrap-up).
+
+## 2026-11-15 · Claude Code (Opus) · Phase 1 · 1.5 finished, 1.6 deployed
+- Prompts used: "yes add gender as female and male, and continue the development of phase 1
+  and 2"; "continue"; mid-session "what have you achieved so far, the UI is same since
+  yesterday, also the CI is failing continuously … why the development feels slower"; then
+  "no, go ahead with what you are doing, UI can wait".
+- Proposed by the agent, declined by Pushpendra: jump to the React UI before finishing Phase 1
+  (so progress is visible). He kept the plan's order: finish the API, OpenAPI and the Neon
+  deploy first.
+- Agent mistake surfaced by Pushpendra: CI red for four pushes on a formatting check the agent
+  never looked at after pushing. Fixed, and "check CI after every push" is now a rule.
+- Rejected by the agent itself: a pre-check for duplicate emails (racy) → catch the unique
+  violation; reopening a termination (rewrites history) → ADR-013.
+- Commits: 9b83278 … c3adb15 (+ this wrap-up).

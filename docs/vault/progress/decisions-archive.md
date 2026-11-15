@@ -31,3 +31,25 @@ superseded unless it says so; ADRs hold the full reasoning.
   ESLint stays on 9 (what Nx 24's plugins support).
 - 2026-11-14 · Pre-commit runs lint + typecheck + test for affected projects (not just lint):
   "every commit must build and pass tests" is enforced, not hoped for.
+
+## 2026-11-15 (moved from progress.md in the evening)
+
+- DB driver: `pg` (node-postgres) + Drizzle over Neon's pooled URL, 5 s statement_timeout;
+  tests inject PGlite behind the same `Database` type (DATABASE token).
+- a11y tests call axe-core directly (5-line helper) instead of vitest-axe (no release since 2022).
+- shadcn/ui initialised (config, `@/` alias, cn, colours mapped onto ui.md tokens); primitives
+  are added with their first feature — no unused, untested vendored code in the history.
+- 5xx responses never carry the exception message; logs keep stack frames but drop the message
+  line (it can quote emails or connection strings).
+- Extensions are enabled by migration 0000 (not a docker init script), so Neon, docker and the
+  PGlite harness all get them the same way; the harness applies migrations.
+- **No `Co-Authored-By` trailers in commit messages** (Pushpendra). Commits up to `22d481a` keep
+  theirs: removing them would need a history rewrite + force push (CLAUDE.md forbids).
+- CI bundle-size check (deployment.md) deferred to the Phase 4 performance pass.
+- D-1 closed: React ecosystem (Pushpendra: the recruiter is not expected to reply).
+- Region Singapore for both Neon (aws-ap-southeast-1) and Vercel functions (sin1).
+- Two DB roles: migrations as owner over the direct URL; the API as `paylens_app` (DML only,
+  5 s timeout) over the pooler. Secrets go shell variable → Vercel, never to disk.
+- API on Vercel via a plain-JS function over our tsc build, not the NestJS preset (ADR-011
+  addendum). Web adds CSP/HSTS/etc. in vercel.json; `/api` rewritten (ADR-008).
+- Vercel projects created with the CLI's `vercel api` (the MCP lacks scope on the hobby team).
