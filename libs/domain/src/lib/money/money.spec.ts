@@ -19,3 +19,21 @@ describe('Money.add', () => {
     expect(addAcrossCurrencies).toThrow(CurrencyMismatchError);
   });
 });
+
+describe('Money.subtract', () => {
+  it('subtracts in minor units and may go negative (a pay cut is a negative delta)', () => {
+    const before = Money.of(7_000_000n, 'GBP');
+    const after = Money.of(6_850_000n, 'GBP');
+
+    const delta = after.subtract(before);
+
+    expect(delta).toEqual(Money.of(-150_000n, 'GBP'));
+  });
+
+  it('refuses to subtract amounts in different currencies', () => {
+    const pounds = Money.of(100n, 'GBP');
+    const dollars = Money.of(100n, 'USD');
+
+    expect(() => pounds.subtract(dollars)).toThrow(CurrencyMismatchError);
+  });
+});

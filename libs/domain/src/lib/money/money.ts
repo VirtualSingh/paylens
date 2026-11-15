@@ -16,10 +16,19 @@ export class Money {
   }
 
   add(other: Money): Money {
+    this.assertSameCurrency(other);
+    return new Money(this.amountMinor + other.amountMinor, this.currency);
+  }
+
+  subtract(other: Money): Money {
+    this.assertSameCurrency(other);
+    return new Money(this.amountMinor - other.amountMinor, this.currency);
+  }
+
+  private assertSameCurrency(other: Money): void {
     if (other.currency !== this.currency) {
       throw new CurrencyMismatchError(this.currency, other.currency);
     }
-    return new Money(this.amountMinor + other.amountMinor, this.currency);
   }
 }
 
