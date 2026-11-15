@@ -194,4 +194,127 @@ describe('employee changes', () => {
       );
     });
   });
+
+  // Each test edits a different person, so none depends on another's version bump.
+  describe('PATCH /employees/:id', () => {
+    /** `ifMatch: null` sends no If-Match header at all. */
+    const edit = (id: string, body: object, ifMatch: string | null = '"1"') => {
+      const call = request(app.getHttpServer())
+        .patch(`/api/v1/employees/${id}`)
+        .set('x-dev-role', 'hr_manager')
+        .set('x-request-id', 'req-edit-1')
+        .send(body);
+      return ifMatch === null ? call : call.set('If-Match', ifMatch);
+    };
+
+    it('moves a person to another department and title, and bumps the version', async () => {
+      // Olivia Brown: Sales, Account Executive.
+      const response = await edit(await idOf('ACME-000007'), {
+        departmentCode: 'ENG',
+        jobTitle: 'Solutions Engineer',
+      }).expect(200);
+
+      expect(response.headers.etag).toBe('"2"');
+      expect(response.body).toMatchObject({
+        department: { code: 'ENG', name: 'Engineering' },
+        jobTitle: 'Solutions Engineer',
+        version: 2,
+      });
+    });
+
+    it('audits only the fields that changed, before and after', async () => {
+      // Oliver Taylor: Account Executive, full time. The title stays the same.
+      await edit(await idOf('ACME-000010'), {
+        jobTitle: 'Account Executive',
+        fte: '0.8',
+      }).expect(200);
+
+      const audit = await pglite.query(
+        `select action, before, after, request_id from audit_events
+         where entity_id = $1`,
+        [await idOf('ACME-000010')],
+      );
+
+      expect(audit.rows).toEqual([
+        {
+          action: 'employee.updated',
+          before: { fte: '1' },
+          after: { fte: '0.8' },
+          request_id: 'req-edit-1',
+        },
+      ]);
+    });
+
+    it('keeps the version and writes no audit event when nothing changes', async () => {
+      // George Evans is already a Software Engineer.
+      const response = await edit(await idOf('ACME-000012'), {
+        jobTitle: 'Software Engineer',
+      }).expect(200);
+      const audit = await pglite.query(
+        'select 1 from audit_events where entity_id = $1',
+        [await idOf('ACME-000012')],
+      );
+
+      expect(response.body.version).toBe(1);
+      expect(audit.rows).toEqual([]);
+    });
+
+    it('answers 409 to an edit made on a version someone else has changed since', async () => {
+      await edit(await idOf('ACME-000009'), {
+        jobTitle: 'Staff Engineer',
+      }).expect(200);
+
+      const response = await edit(await idOf('ACME-000009'), {
+        jobTitle: 'Principal Engineer',
+      }).expect(409);
+
+      expect(response.body.detail).toBe(
+        'This record changed since you opened it. Reload to continue.',
+      );
+    });
+
+    it('answers 428 without If-Match', async () => {
+      await edit(
+        await idOf('ACME-000011'),
+        { jobTitle: 'Staff Engineer' },
+        null,
+      ).expect(428);
+    });
+
+    it('refuses a manager who reports to the person, with 422', async () => {
+      // Emma Johnson reports to Liam Smith, so Liam cannot report to Emma.
+      const response = await edit(await idOf('ACME-000006'), {
+        managerId: await idOf('ACME-000005'),
+      }).expect(422);
+
+      expect(response.body.code).toBe('reporting_cycle');
+    });
+
+    it('answers 409 when the new work email belongs to someone else', async () => {
+      const response = await edit(await idOf('ACME-000004'), {
+        workEmail: 'amelia.wilson@acme.test',
+      }).expect(409);
+
+      expect(response.body.detail).toBe('Someone already has this work email.');
+    });
+
+    it('points at a level that does not exist with 400', async () => {
+      const response = await edit(await idOf('ACME-000003'), {
+        levelCode: 'M4',
+      }).expect(400);
+
+      expect(response.body.errors).toEqual([
+        { path: 'levelCode', message: 'There is no level with this code' },
+      ]);
+    });
+
+    it('answers 404 for someone who does not exist', async () => {
+      await request(app.getHttpServer())
+        .patch('/api/v1/employees/00000000-0000-4000-8000-000000000000')
+        .set('x-dev-role', 'hr_manager')
+        .set('If-Match', '"1"')
+        .send({ jobTitle: 'Ghost' })
+        .expect(404);
+    });
+  });
 });

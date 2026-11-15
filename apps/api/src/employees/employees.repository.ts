@@ -10,6 +10,7 @@ import {
   type EmployeeStatus,
   PAY_FREQUENCIES,
   type PayFrequencyName,
+  type UpdateEmployeeRequest,
 } from '@paylens/shared';
 import { type SQL, sql } from 'drizzle-orm';
 import { type Database, DATABASE } from '../db/database.js';
@@ -192,6 +193,125 @@ export class EmployeesRepository {
     return column.textOrNull(rows[0] ?? { highest: null }, 'highest');
   }
 
+  /** The fields HR may edit, as the edit request names them (codes, not ids). */
+  async editableFields(
+    tx: Database,
+    id: string,
+  ): Promise<EmployeeDetails | null> {
+    const rows = await selectRows(
+      tx,
+      sql`select e.first_name, e.last_name, e.work_email::text, d.code as department_code,
+                 f.code as job_family_code, l.code as level_code, e.job_title,
+                 e.manager_id::text, e.employment_type::text,
+                 trim_scale(e.fte)::text as fte, e.gender::text
+          from employees e
+          join departments d on d.id = e.department_id
+          join job_families f on f.id = e.job_family_id
+          join job_levels l on l.id = e.job_level_id
+          where e.id = ${id}`,
+    );
+    const row = rows[0];
+    return row === undefined
+      ? null
+      : {
+          firstName: column.text(row, 'first_name'),
+          lastName: column.text(row, 'last_name'),
+          workEmail: column.text(row, 'work_email'),
+          departmentCode: column.text(row, 'department_code'),
+          jobFamilyCode: column.text(row, 'job_family_code'),
+          levelCode: column.text(row, 'level_code'),
+          jobTitle: column.text(row, 'job_title'),
+          managerId: column.textOrNull(row, 'manager_id'),
+          employmentType: column.oneOf(
+            row,
+            'employment_type',
+            EMPLOYMENT_TYPES,
+          ),
+          fte: column.text(row, 'fte'),
+          gender: column.oneOf(row, 'gender', GENDERS),
+        };
+  }
+
+  /**
+   * The manager's id, then their manager's, up to the top of the org. The depth limit keeps a
+   * loop already in the data (which this rule exists to prevent) from running forever.
+   */
+  async managerLine(tx: Database, managerId: string): Promise<string[]> {
+    const rows = await selectRows(
+      tx,
+      sql`with recursive line as (
+            select id, manager_id, 1 as depth from employees where id = ${managerId}
+            union all
+            select e.id, e.manager_id, line.depth + 1
+            from employees e join line on e.id = line.manager_id
+            where line.depth < 100
+          )
+          select id::text from line order by depth`,
+    );
+    return rows.map((row) => column.text(row, 'id'));
+  }
+
+  /**
+   * Writes the changed fields and bumps the version, returning the new one. Column names are
+   * fixed here; codes become ids inside the statement (the service has checked they exist).
+   */
+  async update(
+    tx: Database,
+    id: string,
+    changes: Partial<EmployeeDetails>,
+  ): Promise<number> {
+    const sets: SQL[] = [];
+    if (changes.firstName !== undefined) {
+      sets.push(sql`first_name = ${changes.firstName}`);
+    }
+    if (changes.lastName !== undefined) {
+      sets.push(sql`last_name = ${changes.lastName}`);
+    }
+    if (changes.workEmail !== undefined) {
+      sets.push(sql`work_email = ${changes.workEmail}`);
+    }
+    if (changes.departmentCode !== undefined) {
+      sets.push(
+        sql`department_id = (select id from departments where code = ${changes.departmentCode})`,
+      );
+    }
+    if (changes.jobFamilyCode !== undefined) {
+      sets.push(
+        sql`job_family_id = (select id from job_families where code = ${changes.jobFamilyCode})`,
+      );
+    }
+    if (changes.levelCode !== undefined) {
+      sets.push(
+        sql`job_level_id = (select id from job_levels where code = ${changes.levelCode})`,
+      );
+    }
+    if (changes.jobTitle !== undefined) {
+      sets.push(sql`job_title = ${changes.jobTitle}`);
+    }
+    if (changes.managerId !== undefined) {
+      sets.push(sql`manager_id = ${changes.managerId}::uuid`);
+    }
+    if (changes.employmentType !== undefined) {
+      sets.push(
+        sql`employment_type = ${changes.employmentType}::employment_type`,
+      );
+    }
+    if (changes.fte !== undefined) {
+      sets.push(sql`fte = ${changes.fte}::numeric`);
+    }
+    if (changes.gender !== undefined) {
+      sets.push(sql`gender = ${changes.gender}::gender`);
+    }
+    sets.push(sql`version = version + 1`, sql`updated_at = now()`);
+
+    const rows = await selectRows(
+      tx,
+      sql`update employees set ${sql.join(sets, sql`, `)}
+          where id = ${id} returning version`,
+    );
+    return column.number(rows[0] ?? { version: Number.NaN }, 'version');
+  }
+
   /** Adds a person (status active, version 1) and returns their id. */
   async insert(tx: Database, person: NewEmployee): Promise<string> {
     const rows = await selectRows(
@@ -224,6 +344,9 @@ export interface ResolvedReferences {
   /** The manager's status; null when there is no such person. */
   readonly managerStatus: EmployeeStatus | null;
 }
+
+/** Everything an edit may change, as the edit request names it. */
+export type EmployeeDetails = Required<UpdateEmployeeRequest>;
 
 /** A new person, with codes already resolved to ids. */
 export interface NewEmployee {
