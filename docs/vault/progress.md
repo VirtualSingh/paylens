@@ -10,38 +10,34 @@ Read this first every session. Keep it short: what is true now, what is next, wh
 blocked, what needs a human. Move detail to the dated log. When this file passes 120 lines,
 archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
-## Current state (as of 2026-11-15, session paused by Pushpendra for a few hours)
+## Current state (as of 2026-11-15, midday)
 
-- Phase 0: 0.0–0.4 done; 0.5 CI workflow written and pushed but **has never run** — GitHub
-  refuses to start jobs ("account is locked due to a billing issue"). 0.6 not started.
-- Repo: https://github.com/VirtualSingh/paylens (public), working directly on `main`.
-  Working tree clean; everything pushed.
-- Locally green: domain 2 · shared 11 · api 20 (incl. PGlite) · web 10 tests, lint,
-  typecheck, build, Prettier, `pnpm audit --prod` (0 known vulns); 1 Playwright smoke.
-- `pnpm dev` verified: web :4200, API via the Vite proxy, `/health/ready` 503 without a DB.
-- Claude Code restarted (2026-11-15): nx-mcp connected and answering; **vercel and neon MCP
-  servers await OAuth** — Pushpendra runs `/mcp` in the Claude Code panel and signs in to both.
-- Docker Desktop 29.9.3 + Compose v5.7 installed: `docker compose up -d --wait db` →
-  `pnpm db:migrate` applied migration 0000 (btree_gist, citext, pg_trgm) → `/health/ready` 200.
-- Frontend framework: **React — final** (D-1 closed by Pushpendra; ADR-003 updated).
-- Known issue: api suite ~20 s wall clock; `--no-isolate` measured at 12.6 s (not applied yet).
+- **Phase 0 complete except one exit target** (`pnpm test` 30 s here vs < 20 s). Walking
+  skeleton live: https://paylens-web-black.vercel.app → `/api/*` rewrite → paylens-api
+  (Vercel Function, sin1) → Neon Postgres 17 (Singapore). `/api/v1/health/ready` 200, db up.
+- CI green on every push since 3f9cda6 (lint/typecheck/format, test+coverage, build,
+  security: audit --prod, gitleaks, OSV with ADR-012 exceptions).
+- Tests: domain 2 · shared 10 · api 20 (PGlite) · web 10 + 1 Playwright smoke; live site
+  checked in Chromium: no CSP violations, Plex loaded, shell as ui.md.
+- API deploys as `apps/api/api/index.js` over the tsc build (ADR-011 addendum): Vercel's
+  NestJS preset failed four times compiling src/main.ts itself.
+- Tools: gh, vercel/neon CLIs, Docker, Vercel/Neon/Nx MCP all connected. The Vercel MCP lacks
+  scope on the hobby team (needs an "authorize team access" click); the CLI is used instead.
+- Frontend framework: **React — final** (D-1 closed; ADR-003).
 
 ## Now (next 3 steps)
 
-1. CI security job red (run 43681011035): OSV finds 25 vulns, all dev tooling (prod audit
-   and gitleaks pass; lint/typecheck/test/build green). Fix: Nx 24.0.0 → 24.0.6 (undici
-   7.30.1, 18 findings); pnpm overrides `sockjs>uuid ^11.1.1`, `@esbuild-kit/core-utils>esbuild
-   ^0.25` (re-test db:generate/db:migrate); `osv-scanner.toml` ignores with reason + expiry for
-   glob/minimatch (majors Nx doesn't support) and deepmerge (no fix); ADR-012.
-2. Phase 0 · 0.6 — create Neon project + Vercel projects, deploy, run `pnpm db:migrate`
-   against Neon, record URLs here. CLIs are signed in (vercel: virtualsingh, hobby team
-   `virtualsinghs-projects`; neon: Pushpendra); MCP tools load after the pending restart.
-3. Phase 0 exit check: `pnpm test` time on a quiet machine (api now `isolate: false`, aab7c68).
+1. Pushpendra: Phase 0 checkpoint review (exit checklist in plan/phase-0-foundation.md);
+   answer D-2 and D-5 (due today) — D-2 shapes the Phase 1 schema.
+2. Phase 1 · 1.1 — domain lib: Money (subtract, compare, allocate), FX conversion with
+   half-even rounding, effective periods, band math (compa-ratio, penetration) — all TDD.
+3. Phase 1 · 1.2 — Drizzle schema + exclusion constraints (PGlite-tested), first data migrations.
 
-## Next (this phase)
+## Next (this phase → Phase 1)
 
+- `pnpm test` under 20 s: the health spec boots two PGlites (~6 s); share one, or a template DB.
 - Branch protection: decide after D-5 (requiring checks on `main` blocks direct pushes).
-- README skeleton with live URL, badges and the 5-minute local path (part of 0.6).
+- Optional: Vercel MCP "authorize team access" so deploy inspection works through MCP too.
 
 ## Later (next phase)
 
@@ -59,27 +55,8 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Decisions taken (short; ADR has the reasoning)
 
-- 2026-11-14 · Stack: Nx + NestJS 12 + Drizzle/Postgres (Neon) + React/Vite (default) + Vercel. ADR-001/002/003/008.
-- 2026-11-14 · Money as bigint minor units with dated FX and reporting currency. ADR-004.
-- 2026-11-14 · Effective-dated, append-only salary history with DB exclusion constraint. ADR-005.
-- 2026-11-14 · Google Sign-In + server-side sessions; roles admin/hr_manager/viewer; demo mode. ADR-006.
-- 2026-11-14 · Vitest + PGlite + TDD cadence. ADR-007.
-- 2026-11-14 · Assistant: Mastra, tools-only, aggregate-first, evals in CI. ADR-009.
-- 2026-11-14 · Out of scope list incl. micro-frontends and Chrome extension. ADR-010.
-- 2026-11-14 · D-4 public: the repo already existed as public (`VirtualSingh/paylens`).
-- 2026-11-14 · Node 24 everywhere (`.nvmrc`, CI, Vercel), not 22: design.md says "22 LTS+";
-  24 is already installed, is Vercel's default runtime and is supported longer.
-- 2026-11-14 · `neon` CLI 9.x instead of `neonctl`: it is the successor (same commands) and
-  was already installed globally; installing `neonctl` would clash on the `neon` shim.
-- 2026-11-14 · Requirements doc committed *before* the vault so it is the first commit a
-  reviewer sees.
-- 2026-11-14 · MCP restart deferred from 0.0 to 0.6: only 0.6 needs Vercel/Neon, so the
-  restart and both browser logins become one interruption instead of two.
-- 2026-11-14 · Nx 24 (not 23 as planned — current release). API on NestJS 12 as ESM built with
-  plain `tsc` (ADR-011); the generator's Nest 11 + webpack/CommonJS output was replaced.
-  ESLint stays on 9 (what Nx 24's plugins support).
-- 2026-11-14 · Pre-commit runs lint + typecheck + test for affected projects (not just lint):
-  "every commit must build and pass tests" is enforced, not hoped for.
+- 2026-11-14 entries (stack, money, dating, auth, testing, tooling, Node 24, Nx 24, hooks …) →
+  [progress/decisions-archive.md](progress/decisions-archive.md).
 - 2026-11-15 · DB driver: `pg` (node-postgres) + Drizzle over Neon's pooled URL, 5 s
   statement_timeout; tests inject PGlite behind the same `Database` type (DATABASE token).
 - 2026-11-15 · a11y tests call axe-core directly (5-line helper) instead of vitest-axe,
@@ -95,6 +72,14 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
   `22d481a` keep theirs: removing them would need a history rewrite + force push (CLAUDE.md forbids).
 - 2026-11-15 · CI bundle-size check (deployment.md) deferred to the Phase 4 performance pass.
 - 2026-11-15 · D-1 closed: React ecosystem (Pushpendra: the recruiter is not expected to reply).
+- 2026-11-15 · Region Singapore for both Neon (aws-ap-southeast-1) and Vercel functions (sin1):
+  deployment.md only requires "same region"; Singapore is nearest to India-based reviewers.
+- 2026-11-15 · Two DB roles: migrations as owner over the direct URL; the API as `paylens_app`
+  (DML only, 5 s timeout) over the pooler. Secrets go shell variable → Vercel, never to disk.
+- 2026-11-15 · API on Vercel via a plain-JS function over our tsc build, not the NestJS preset
+  (ADR-011 addendum). Web adds CSP/HSTS/etc. in vercel.json; `/api` rewritten (ADR-008).
+- 2026-11-15 · Vercel projects created with the CLI's `vercel api` (same endpoint the MCP uses)
+  because the MCP connection lacks scope on the hobby team.
 
 ## Blockers
 
@@ -108,22 +93,25 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Useful facts (no secrets)
 
-- Live URLs: web = _tbd_, api = _tbd_. Vercel project ids: _tbd_. Neon project: _tbd_.
-- Seed timing: local _tbd_, Neon _tbd_.
-- Machine (0.0): Windows 11 Home 10.0.26200 · Git Bash + PowerShell 5.1 · Node 24.21.0 ·
-  npm 11.19.0 · pnpm 12.18.0 (npm -g; corepack needs admin to write into Program Files) ·
-  git 2.37.0 · gh 2.102.0 (logged in as VirtualSingh) · vercel 65.16.0 · neon 9.5.0 ·
-  Docker Desktop 29.9.3 + Compose v5.7.0 · Claude Code 2.1.325 (VS Code extension).
-- MCP (project scope, `.mcp.json`): vercel (http), neon (http), nx-mcp (stdio via `cmd /c npx`).
-- Scaffold (0.2): Nx 24.0.0 · NestJS 12.5.0 · React 19.3.1 · Vite 8.3.8 · Vitest 5.0.5 ·
-  TypeScript 6.0.3 · ESLint 9.39.5 + typescript-eslint 8.72.2 · Playwright 1.65.0 ·
-  Prettier 3.10.1. Added in 0.3–0.4: Zod 4.6 · Drizzle 0.45.4 + drizzle-kit 0.31.11 ·
-  pg 8.23 · PGlite 0.5.16 · helmet 8.3 · @nestjs/swagger 12.1 · Tailwind 4.3.5 ·
-  shadcn 4.23 (radix-nova). Later: Mastra.
-- CI actions pinned (0.5): checkout v7.0.1 · setup-node v7.1.0 · pnpm/action-setup v6.1.1 ·
-  cache v6.1.0 · upload-artifact v7.0.2 · gitleaks-action v3.0.0 · osv-scanner-action v2.7.1.
+- Live: web https://paylens-web-black.vercel.app (proxies /api; use this) · api
+  https://paylens-api-swart.vercel.app · docs https://paylens-web-black.vercel.app/api/docs
+- Neon: org `rethinklabs` (free) · project `paylens` = `empty-frog-83747850` · aws-ap-southeast-1
+  · PG 17 · branch `main` · db `paylens` · roles `paylens_migrator` (owner; migrations; direct
+  URL) and `paylens_app` (DML only; 5 s timeout; pooled URL; `src/db/roles/create-app-role.sql`).
+- Vercel: hobby team `virtualsinghs-projects` (`team_wG8poSJbTMZln6YfqjVsv5hR`) · `paylens-api`
+  `prj_2k6HqGjBFxAwi9HQv7Gb2GM7I6Za` (root apps/api, "Other" preset, `api/index.js`, sin1) ·
+  `paylens-web` `prj_9JxGKsKfFMAxHklGmrNZA0jiah5x` (root apps/web, Vite). Git deploys from
+  `main`. Env: api `DATABASE_URL` (secret, production), `DOCS_PUBLIC=true`.
+- Seed timing: local _tbd_, Neon _tbd_. Cold `/health/ready`: ~3 s (function + Neon resume).
+- Machine: Windows 11 · Node 24.21 · pnpm 12.18 (npm -g) · git 2.37 · gh 2.102 · vercel 65.16 ·
+  neon 9.5 · Docker Desktop 29.9.3 (container DNS: pass `--dns 1.1.1.1` to reach Neon) ·
+  Claude Code 2.1.325. MCP (`.mcp.json`): vercel, neon (http), nx-mcp (`node node_modules/…`).
+- Versions: Nx 24.0.6 · NestJS 12.5 · React 19.3 · Vite 8.3 · Vitest 5.0 · TS 6.0.3 · ESLint 9.39
+  · Playwright 1.65 · Zod 4.6 · Drizzle 0.45.4 / kit 0.31 · pg 8.23 · PGlite 0.5.16 · helmet 8.3
+  · swagger 12.1 · Tailwind 4.3.5 · shadcn 4.23. CI actions pinned by SHA (ci.yml comments).
 
 ## Log files
 
-- [progress/log-2026-11-14.md](progress/log-2026-11-14.md) — planning session; build session 0.0–0.2
-- [progress/log-2026-11-15.md](progress/log-2026-11-15.md) — build session 0.3–0.5
+- [progress/log-2026-11-14.md](progress/log-2026-11-14.md) — planning session; build 0.0–0.2
+- [progress/log-2026-11-15.md](progress/log-2026-11-15.md) — build 0.3–0.6 (deploy)
+- [progress/decisions-archive.md](progress/decisions-archive.md) — older "Decisions taken"

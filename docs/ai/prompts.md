@@ -56,3 +56,17 @@ Template:
 - Plan deviations the agent took and recorded: MCP restart moved from 0.0 to 0.6; shadcn
   primitives added on first use instead of eight up front; Node 24 instead of 22.
 - Commits: e3e0353 … 176bf53 (+ this wrap-up).
+
+## 2026-11-15 · Claude Code (Opus) · Phase 0 · CI fix and task 0.6 (deploy)
+- Prompts used: "I have installed docker … go with react ecosystem, start by checking if all
+  the MCP servers are up"; "check for actions now"; "all the mcp servers and tools are up now,
+  let's start working".
+- Decided by Pushpendra: D-1 closed as React (the recruiter is not expected to reply).
+- Rejected by the agent itself: Vercel's zero-config NestJS preset. After four failed deploys
+  (diagnosed by reading @vercel/node's published source) the agent stopped adapting the code
+  to Vercel's compiler, reverted the three workarounds, and deployed a plain-JS function over
+  the project's own tsc build (ADR-011 addendum) — production runs what CI tested.
+- Rejected by the agent itself: muting OSV-Scanner or scanning production deps only; chose
+  fix → pin → accept-with-expiry with written reasons (ADR-012).
+- README still needs: human rejections of AI proposals — one so far (the attribution trailer).
+- Commits: 0040267 … f61cd4f (+ this wrap-up).

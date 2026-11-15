@@ -48,7 +48,8 @@ and growing it are in the repo root `CLAUDE.md` ("The vault").
 
 - [progress.md](progress.md) — rolling window
 - [progress/log-2026-11-14.md](progress/log-2026-11-14.md) — planning session; build 0.0–0.2
-- [progress/log-2026-11-15.md](progress/log-2026-11-15.md) — build session from 0.3
+- [progress/log-2026-11-15.md](progress/log-2026-11-15.md) — build session 0.3–0.6 (deploy)
+- [progress/decisions-archive.md](progress/decisions-archive.md) — older "Decisions taken"
 
 ## Reference
 
