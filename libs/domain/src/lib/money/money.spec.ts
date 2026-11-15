@@ -1,3 +1,4 @@
+import { DomainError } from '../errors.js';
 import { CurrencyMismatchError, Money } from './money.js';
 
 describe('Money.add', () => {
@@ -82,5 +83,14 @@ describe('Money.format with negative amounts', () => {
     const cut = Money.of(-5n, 'USD');
 
     expect(cut.format('en-US')).toBe('-$0.05');
+  });
+});
+
+describe('CurrencyMismatchError', () => {
+  it('is a domain error with a stable code the API can report', () => {
+    const error = new CurrencyMismatchError('EUR', 'INR');
+
+    expect(error).toBeInstanceOf(DomainError);
+    expect(error.code).toBe('currency_mismatch');
   });
 });

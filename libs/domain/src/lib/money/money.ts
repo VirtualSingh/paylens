@@ -1,3 +1,4 @@
+import { DomainError } from '../errors.js';
 import { divideRoundingHalfEven } from './rounding.js';
 
 /** ISO-4217 currency code, e.g. "EUR", "INR", "USD". */
@@ -84,9 +85,10 @@ export class Money {
 }
 
 /** Amounts in different currencies cannot be combined without an FX conversion. */
-export class CurrencyMismatchError extends Error {
+export class CurrencyMismatchError extends DomainError {
+  readonly code = 'currency_mismatch';
+
   constructor(left: CurrencyCode, right: CurrencyCode) {
     super(`Cannot combine ${left} with ${right} without converting first`);
-    this.name = 'CurrencyMismatchError';
   }
 }
