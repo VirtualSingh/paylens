@@ -2,10 +2,6 @@ packages:
   - 'apps/*'
   - 'libs/*'
 
-# Type packages are hoisted to the root node_modules so tools that resolve without following
-# pnpm's symlinks (Vercel's TypeScript compile, ADR-011) still find transitive @types.
-publicHoistPattern:
-  - '@types/*'
 allowBuilds:
   '@swc/core': true
   nx: true
