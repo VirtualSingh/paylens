@@ -1,13 +1,23 @@
 {
-  "extends": "../../tsconfig.base.json",
-  // Solution file: `tsc --build` (Nx typecheck) compiles the two referenced configs and
-  // nothing from here. Vercel, however, compiles src/main.ts itself with *this* file, so it
-  // carries the app's emit settings too (ADR-011): JS output plus the decorator metadata
-  // NestJS's dependency injection needs.
+  // This file has two jobs (ADR-011):
+  // 1. Nx / editor solution file: `tsc --build` follows the references below and compiles
+  //    nothing from here.
+  // 2. The config Vercel uses on deploy: @vercel/node compiles src/main.ts with the nearest
+  //    tsconfig.json and forces `declaration: false`. It must therefore not extend
+  //    tsconfig.base.json, whose `composite: true` rejects that, so the options the API needs
+  //    to compile are stated here (they mirror tsconfig.app.json).
   "compilerOptions": {
-    "composite": false,
-    "emitDeclarationOnly": false,
-    "declarationMap": false,
+    "rootDir": "src",
+    "target": "es2022",
+    "lib": ["es2022"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "customConditions": ["@paylens/source"],
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
