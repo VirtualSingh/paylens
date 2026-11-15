@@ -27,8 +27,16 @@ Workspace libs are consumed through their package `exports` (built `dist/` at ru
   Vite 8) and build agree on decorator metadata.
 - Negative: `.js` suffixes on TypeScript imports look odd at first; libs must be built before
   the API runs (Nx `dependsOn: ^build` handles it).
-- Follow-ups: confirm Vercel's NestJS preset accepts this layout in task 0.6; if not, record
-  the adapter (ADR-008 fallback) here.
+- ~~Follow-up: confirm Vercel's NestJS preset accepts this layout~~ — it does not (below).
+
+## Addendum 2026-11-15 — deploying to Vercel
+Vercel's NestJS preset re-compiles `src/main.ts` with its own TypeScript service. Four deploys
+failed on it (inherited `composite` → silent "Emit skipped"; then helmet typed as CommonJS),
+in ways a Windows replica could not reproduce. Decision (ADR-008's fallback): the Vercel
+project uses the "Other" preset and `apps/api/api/index.js`, a plain-JS Function that serves
+the app our `tsc` build emitted to `dist/` (via `createApp()`); `vercel-build` runs
+`nx run api:build` first. `main.ts` stays the entrypoint for a long-running server.
+Production therefore runs exactly the JavaScript that CI builds and tests.
 
 ## Links
-ADR-002 · ADR-008 · docs/vault/design/architecture.md · commit c729291
+ADR-002 · ADR-008 · docs/vault/design/architecture.md · commits c729291, 212fba8…7620a30

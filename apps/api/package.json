@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "scripts": {
+    "vercel-build": "pnpm exec nx run api:build"
+  },
   "nx": {
     "name": "api",
     "tags": [
@@ -42,7 +45,8 @@
           ]
         }
       }
-    }
+    },
+    "includedScripts": []
   },
   "dependencies": {
     "@nestjs/common": "^12.5.0",
