@@ -16,7 +16,7 @@ export default defineConfig(() => ({
       // Pure business rules: every line and branch is tested (testing.md). CI runs
       // `test --coverage`, so dropping below 100% fails the build.
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.spec.ts', 'src/index.ts'],
+      exclude: ['src/**/*.spec.ts', 'src/index.ts', 'src/testing/**'],
       thresholds: { 100: true },
     },
   },

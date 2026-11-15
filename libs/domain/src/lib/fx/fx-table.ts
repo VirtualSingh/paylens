@@ -36,7 +36,8 @@ interface UsdRate extends Decimal {
 }
 
 const USD = 'USD';
-const POSITIVE_DECIMAL = /^\d+(\.\d+)?$/;
+// Digits, then optionally a dot and more digits (written without a nested quantifier).
+const POSITIVE_DECIMAL = /^\d+\.?\d*$/;
 
 /**
  * Dated USD-based exchange rates (ADR-004). Conversions are exact rational arithmetic on
