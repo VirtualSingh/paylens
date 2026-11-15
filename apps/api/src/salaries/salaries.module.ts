@@ -9,5 +9,7 @@ import { SalaryRepository } from './salary.repository.js';
   imports: [AuditModule, EmployeesModule],
   controllers: [SalariesController],
   providers: [SalariesService, SalaryRepository],
+  // A hire writes the first salary record (employee-changes).
+  exports: [SalaryRepository],
 })
 export class SalariesModule {}

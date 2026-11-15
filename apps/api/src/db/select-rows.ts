@@ -47,4 +47,8 @@ export const column = {
   number(row: Row, name: string): number {
     return Number(row[name]);
   },
+  /** Like `number`, but keeps SQL null as null (Number(null) would be 0). */
+  numberOrNull(row: Row, name: string): number | null {
+    return row[name] === null ? null : column.number(row, name);
+  },
 };

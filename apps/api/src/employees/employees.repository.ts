@@ -135,6 +135,112 @@ export class EmployeesRepository {
     const row = rows[0];
     return row === undefined ? null : toProfileRow(row);
   }
+
+  /**
+   * Looks up what the codes in a create or edit request point at, in one round trip. Each
+   * field is null when nothing matches (or nothing was asked); the service reports which.
+   */
+  async resolveReferences(
+    tx: Database,
+    codes: {
+      readonly countryCode?: string;
+      readonly departmentCode?: string;
+      readonly jobFamilyCode?: string;
+      readonly levelCode?: string;
+      readonly managerId?: string | null;
+    },
+  ): Promise<ResolvedReferences> {
+    const rows = await selectRows(
+      tx,
+      sql`select
+            (select currency_code from countries where code = ${codes.countryCode ?? null})
+              as currency_code,
+            (select id from departments where code = ${codes.departmentCode ?? null})
+              as department_id,
+            (select id from job_families where code = ${codes.jobFamilyCode ?? null})
+              as job_family_id,
+            (select id from job_levels where code = ${codes.levelCode ?? null})
+              as job_level_id,
+            (select status::text from employees where id = ${codes.managerId ?? null}::uuid)
+              as manager_status`,
+    );
+    const row = rows[0] ?? {};
+    const managerStatus = column.textOrNull(row, 'manager_status');
+    return {
+      currencyCode: column.textOrNull(row, 'currency_code'),
+      departmentId: column.numberOrNull(row, 'department_id'),
+      jobFamilyId: column.numberOrNull(row, 'job_family_id'),
+      jobLevelId: column.numberOrNull(row, 'job_level_id'),
+      managerStatus:
+        managerStatus === null
+          ? null
+          : column.oneOf(row, 'manager_status', EMPLOYEE_STATUSES),
+    };
+  }
+
+  /**
+   * The highest employee code, read under a transaction-scoped advisory lock: two people
+   * created at the same moment queue here instead of both picking the same next code. The
+   * lock is released when the transaction commits or rolls back.
+   */
+  async highestCodeLocked(tx: Database): Promise<string | null> {
+    await tx.execute(sql`select pg_advisory_xact_lock(${EMPLOYEE_CODE_LOCK})`);
+    const rows = await selectRows(
+      tx,
+      sql`select max(employee_code) as highest from employees`,
+    );
+    return column.textOrNull(rows[0] ?? { highest: null }, 'highest');
+  }
+
+  /** Adds a person (status active, version 1) and returns their id. */
+  async insert(tx: Database, person: NewEmployee): Promise<string> {
+    const rows = await selectRows(
+      tx,
+      sql`insert into employees (employee_code, first_name, last_name, work_email,
+                                 country_code, department_id, job_family_id, job_level_id,
+                                 job_title, manager_id, employment_type, fte, hire_date,
+                                 status, gender)
+          values (${person.employeeCode}, ${person.firstName}, ${person.lastName},
+                  ${person.workEmail}, ${person.countryCode}, ${person.departmentId},
+                  ${person.jobFamilyId}, ${person.jobLevelId}, ${person.jobTitle},
+                  ${person.managerId}::uuid, ${person.employmentType}::employment_type,
+                  ${person.fte}::numeric, ${person.hireDate}::date, 'active',
+                  ${person.gender}::gender)
+          returning id::text`,
+    );
+    return column.text(rows[0] ?? {}, 'id');
+  }
+}
+
+/** Any constant unique within this app; only employee code allocation takes this lock. */
+const EMPLOYEE_CODE_LOCK = 7_301;
+
+/** What a request's codes point at; null where nothing matches. */
+export interface ResolvedReferences {
+  readonly currencyCode: string | null;
+  readonly departmentId: number | null;
+  readonly jobFamilyId: number | null;
+  readonly jobLevelId: number | null;
+  /** The manager's status; null when there is no such person. */
+  readonly managerStatus: EmployeeStatus | null;
+}
+
+/** A new person, with codes already resolved to ids. */
+export interface NewEmployee {
+  readonly employeeCode: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly workEmail: string;
+  readonly countryCode: string;
+  readonly departmentId: number;
+  readonly jobFamilyId: number;
+  readonly jobLevelId: number;
+  readonly jobTitle: string;
+  readonly managerId: string | null;
+  readonly employmentType: EmploymentType;
+  readonly fte: string;
+  readonly hireDate: string;
+  readonly gender: Gender;
 }
 
 /** A profile row: the directory row plus the details only the profile shows. */

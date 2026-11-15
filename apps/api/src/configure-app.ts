@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import { ProblemDetailsFilter } from './common/problem-details.filter.js';
 import { requestIdMiddleware } from './common/request-id.middleware.js';
 
+/** Every route lives under this path (api.md → base path); links to resources start here. */
+export const API_PREFIX = 'api/v1';
+
 export interface AppOptions {
   /** Serve OpenAPI at /api/docs (UI) and /api/docs-json. Off in production unless DOCS_PUBLIC. */
   readonly docs: boolean;
@@ -31,7 +34,7 @@ export function configureApp(
       frameguard: { action: 'deny' },
     }),
   );
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix(API_PREFIX);
   app.useGlobalFilters(new ProblemDetailsFilter());
 
   if (options.docs) {
