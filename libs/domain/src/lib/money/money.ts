@@ -72,9 +72,12 @@ export class Money {
       style: 'currency',
       currency: this.currency,
     });
-    return formatter.format(
-      toDecimalString(this.amountMinor, minorUnitsOf(this.currency)),
-    );
+    return formatter.format(this.toDecimalString());
+  }
+
+  /** "2850000.00" for ₹28,50,000: exact, for display code that formats it (Intl reads it). */
+  toDecimalString(): `${number}` {
+    return toDecimalString(this.amountMinor, minorUnitsOf(this.currency));
   }
 
   private assertSameCurrency(other: Money): void {

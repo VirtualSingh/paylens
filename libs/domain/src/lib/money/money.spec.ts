@@ -94,3 +94,13 @@ describe('CurrencyMismatchError', () => {
     expect(error.code).toBe('currency_mismatch');
   });
 });
+
+describe('Money.toDecimalString', () => {
+  it.each([
+    [Money.of(285000000n, 'INR'), '2850000.00'],
+    [Money.of(-5n, 'USD'), '-0.05'],
+    [Money.of(1500000n, 'JPY'), '1500000'],
+  ])('writes %s exactly as a decimal', (money, expected) => {
+    expect(money.toDecimalString()).toBe(expected);
+  });
+});
