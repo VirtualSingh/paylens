@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { EmployeeDirectoryQuerySchema } from './employee-directory-query.schema.js';
 
 describe('EmployeeDirectoryQuerySchema', () => {
@@ -60,5 +61,21 @@ describe('EmployeeDirectoryQuerySchema', () => {
 
   it('keeps a trimmed search term of two or more characters', () => {
     expect(EmployeeDirectoryQuerySchema.parse({ q: '  me ' }).q).toBe('me');
+  });
+
+  it('describes the query string a client sends, for the API docs', () => {
+    const input = z.toJSONSchema(EmployeeDirectoryQuerySchema, {
+      io: 'input',
+      unrepresentable: 'any',
+    });
+
+    expect(input.required ?? []).not.toContain('country');
+    expect(input.properties?.['country']).toMatchObject({
+      anyOf: [{ type: 'string' }, { type: 'array' }],
+    });
+    expect(input.properties?.['sort']).toMatchObject({
+      type: 'string',
+      default: 'lastName:asc',
+    });
   });
 });

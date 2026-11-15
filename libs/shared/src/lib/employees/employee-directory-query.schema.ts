@@ -19,34 +19,40 @@ export const EMPLOYEE_SORT_FIELDS = [
 ] as const;
 export type EmployeeSortField = (typeof EMPLOYEE_SORT_FIELDS)[number];
 
-/** `?country=IN` arrives as a string, `?country=IN&country=DE` as an array: always an array. */
+/**
+ * `?country=IN` arrives as a string, `?country=IN&country=DE` as an array, no parameter as
+ * nothing: always an array. Written as a union rather than a preprocess so the generated
+ * API docs can show what a client may send.
+ */
 function listOf<T extends z.ZodType>(item: T) {
-  return z.preprocess(
-    (value) =>
+  return z
+    .union([item, z.array(item)])
+    .optional()
+    .transform((value): z.output<T>[] =>
       value === undefined ? [] : Array.isArray(value) ? value : [value],
-    z.array(item),
-  );
+    );
 }
 
 /** "annualReporting:desc,lastName" → [{ field, direction }, …]; direction defaults to asc. */
-const SortSchema = z.preprocess(
-  (value) =>
-    typeof value === 'string'
-      ? value.split(',').map((part) => {
-          const [field, direction = 'asc'] = part.trim().split(':');
-          return { field, direction };
-        })
-      : value,
-  z
-    .array(
-      z.object({
-        field: z.enum(EMPLOYEE_SORT_FIELDS),
-        direction: z.enum(['asc', 'desc']),
-      }),
-    )
-    .min(1)
-    .max(3),
-);
+const SortSchema = z
+  .string()
+  .transform((value) =>
+    value.split(',').map((part) => {
+      const [field, direction = 'asc'] = part.trim().split(':');
+      return { field, direction };
+    }),
+  )
+  .pipe(
+    z
+      .array(
+        z.object({
+          field: z.enum(EMPLOYEE_SORT_FIELDS),
+          direction: z.enum(['asc', 'desc']),
+        }),
+      )
+      .min(1)
+      .max(3),
+  );
 
 /** `GET /api/v1/employees` query (api.md → Employees, Pagination, Filtering). */
 export const EmployeeDirectoryQuerySchema = PaginationQuerySchema.extend({
@@ -58,7 +64,11 @@ export const EmployeeDirectoryQuerySchema = PaginationQuerySchema.extend({
   status: listOf(z.enum(EMPLOYEE_STATUSES)),
   bandPosition: listOf(z.enum(BAND_POSITIONS)),
   managerId: z.uuid().optional(),
-  sort: SortSchema.default([{ field: 'lastName', direction: 'asc' }]),
+  // prefault: the default is a query-string value, parsed like one the client sent.
+  sort: SortSchema.prefault('lastName:asc').meta({
+    description:
+      'Up to three fields, comma-separated, each optionally :asc or :desc; e.g. annualReporting:desc,lastName',
+  }),
   reportingCurrency: CurrencyCodeSchema.default('USD'),
 });
 
