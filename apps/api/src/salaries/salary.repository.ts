@@ -59,10 +59,7 @@ export class SalaryRepository {
     createdBy: string | null,
   ): Promise<SalaryRecordRow> {
     for (const closing of plan.close) {
-      await tx.execute(
-        sql`update salary_records set effective_to = ${closing.effectiveTo}
-            where id = ${closing.recordId} and employee_id = ${employeeId}`,
-      );
+      await this.close(tx, employeeId, closing);
     }
     const { insert } = plan;
     const rows = await selectRows(
@@ -82,6 +79,21 @@ export class SalaryRepository {
       throw new Error('The new salary record was not returned');
     }
     return toSalaryRecordRow(row);
+  }
+
+  /**
+   * Ends a record on a date — the only update history ever gets (a database trigger refuses
+   * any other). Used by salary changes and by terminations.
+   */
+  async close(
+    tx: Database,
+    employeeId: string,
+    closing: { readonly recordId: string; readonly effectiveTo: string },
+  ): Promise<void> {
+    await tx.execute(
+      sql`update salary_records set effective_to = ${closing.effectiveTo}
+          where id = ${closing.recordId} and employee_id = ${employeeId}`,
+    );
   }
 }
 

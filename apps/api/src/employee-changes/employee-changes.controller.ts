@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Headers,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -13,6 +15,8 @@ import {
   CreateEmployeeRequestSchema,
   EmployeeIdParamsSchema,
   type EmployeeProfile,
+  type EmployeeStatusChangeRequest,
+  EmployeeStatusChangeRequestSchema,
   type UpdateEmployeeRequest,
   UpdateEmployeeRequestSchema,
 } from '@paylens/shared';
@@ -68,6 +72,34 @@ export class EmployeeChangesController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<EmployeeProfile> {
     const profile = await this.changes.update(
+      id,
+      body,
+      expectedVersion(ifMatch),
+      actor,
+      request.requestId ?? null,
+    );
+    response.setHeader('ETag', `"${profile.version}"`);
+    return profile;
+  }
+
+  /**
+   * Leave, return or termination (F-11), with If-Match like every change to a person. An
+   * action on an existing person, so 200 with the profile and its new ETag, not 201.
+   */
+  @Post(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @Roles('hr_manager')
+  async changeStatus(
+    @Param(new ZodValidationPipe(EmployeeIdParamsSchema))
+    { id }: { id: string },
+    @Body(new ZodValidationPipe(EmployeeStatusChangeRequestSchema))
+    body: EmployeeStatusChangeRequest,
+    @Headers('if-match') ifMatch: string | undefined,
+    @CurrentUser() actor: AuthenticatedUser,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<EmployeeProfile> {
+    const profile = await this.changes.changeStatus(
       id,
       body,
       expectedVersion(ifMatch),

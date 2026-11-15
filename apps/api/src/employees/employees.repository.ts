@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { EmploymentFacts, StatusChangePlan } from '@paylens/domain';
 import {
   EMPLOYEE_STATUSES,
   EMPLOYMENT_TYPES,
@@ -307,6 +308,55 @@ export class EmployeesRepository {
     const rows = await selectRows(
       tx,
       sql`update employees set ${sql.join(sets, sql`, `)}
+          where id = ${id} returning version`,
+    );
+    return column.number(rows[0] ?? { version: Number.NaN }, 'version');
+  }
+
+  /** What the status rules need: status, hire date and the salary record still open. */
+  async employmentFacts(
+    tx: Database,
+    id: string,
+  ): Promise<(EmploymentFacts & { terminationDate: string | null }) | null> {
+    const rows = await selectRows(
+      tx,
+      sql`select e.status::text, e.hire_date::text, e.termination_date::text,
+                 s.id::text as open_salary_id, s.effective_from::text as open_salary_from
+          from employees e
+          left join salary_records s on s.employee_id = e.id and s.effective_to is null
+          where e.id = ${id}`,
+    );
+    const row = rows[0];
+    if (row === undefined) {
+      return null;
+    }
+    const openSalaryId = column.textOrNull(row, 'open_salary_id');
+    return {
+      status: column.oneOf(row, 'status', EMPLOYEE_STATUSES),
+      hireDate: column.text(row, 'hire_date'),
+      terminationDate: column.textOrNull(row, 'termination_date'),
+      openSalary:
+        openSalaryId === null
+          ? null
+          : {
+              id: openSalaryId,
+              effectiveFrom: column.text(row, 'open_salary_from'),
+            },
+    };
+  }
+
+  /** Writes a status (and termination date) and bumps the version, returning the new one. */
+  async setStatus(
+    tx: Database,
+    id: string,
+    plan: Pick<StatusChangePlan, 'status' | 'terminationDate'>,
+  ): Promise<number> {
+    const rows = await selectRows(
+      tx,
+      sql`update employees
+          set status = ${plan.status}::employee_status,
+              termination_date = ${plan.terminationDate}::date,
+              version = version + 1, updated_at = now()
           where id = ${id} returning version`,
     );
     return column.number(rows[0] ?? { version: Number.NaN }, 'version');

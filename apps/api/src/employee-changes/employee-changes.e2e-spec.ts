@@ -46,31 +46,31 @@ describe('employee changes', () => {
     currency: 'INR',
   });
 
+  const create = (body: object, role = 'hr_manager') =>
+    request(app.getHttpServer())
+      .post('/api/v1/employees')
+      .set('x-dev-role', role)
+      .set('x-request-id', 'req-create-1')
+      .send(body);
+
+  // IN · IC3 band: ₹16L / ₹20L / ₹24L, so ₹20L a year is exactly mid.
+  const kavya = (overrides: object = {}) => ({
+    firstName: 'Kavya',
+    lastName: 'Iyer',
+    workEmail: 'kavya.iyer@acme.test',
+    countryCode: 'IN',
+    departmentCode: 'ENG',
+    jobFamilyCode: 'SWE',
+    levelCode: 'IC3',
+    jobTitle: 'Software Engineer',
+    employmentType: 'full_time',
+    hireDate: '2026-11-02',
+    gender: 'female',
+    salary: { amount: inr(2_000_000), frequency: 'annual' },
+    ...overrides,
+  });
+
   describe('POST /employees', () => {
-    const create = (body: object, role = 'hr_manager') =>
-      request(app.getHttpServer())
-        .post('/api/v1/employees')
-        .set('x-dev-role', role)
-        .set('x-request-id', 'req-create-1')
-        .send(body);
-
-    // IN · IC3 band: ₹16L / ₹20L / ₹24L, so ₹20L a year is exactly mid.
-    const kavya = (overrides: object = {}) => ({
-      firstName: 'Kavya',
-      lastName: 'Iyer',
-      workEmail: 'kavya.iyer@acme.test',
-      countryCode: 'IN',
-      departmentCode: 'ENG',
-      jobFamilyCode: 'SWE',
-      levelCode: 'IC3',
-      jobTitle: 'Software Engineer',
-      employmentType: 'full_time',
-      hireDate: '2026-11-02',
-      gender: 'female',
-      salary: { amount: inr(2_000_000), frequency: 'annual' },
-      ...overrides,
-    });
-
     it('creates a person with the next code, their pay and version 1', async () => {
       const highest = await pglite.query<{ code: string }>(
         'select max(employee_code) as code from employees',
@@ -315,6 +315,124 @@ describe('employee changes', () => {
         .set('If-Match', '"1"')
         .send({ jobTitle: 'Ghost' })
         .expect(404);
+    });
+  });
+
+  describe('POST /employees/:id/status', () => {
+    let hires = 0;
+    /** A fresh person (hired 2026-11-02, salary open since then) at version 1. */
+    async function hire(): Promise<string> {
+      hires += 1;
+      const response = await create(
+        kavya({ workEmail: `status.${hires}@acme.test` }),
+      ).expect(201);
+      return response.body.id;
+    }
+
+    const changeStatus = (id: string, body: object, ifMatch = '"1"') =>
+      request(app.getHttpServer())
+        .post(`/api/v1/employees/${id}/status`)
+        .set('x-dev-role', 'hr_manager')
+        .set('x-request-id', 'req-status-1')
+        .set('If-Match', ifMatch)
+        .send(body);
+
+    it('terminates a person and closes their salary on the termination date', async () => {
+      const id = await hire();
+
+      const response = await changeStatus(id, {
+        status: 'terminated',
+        effectiveDate: '2026-12-31',
+      }).expect(200);
+      const history = await request(app.getHttpServer())
+        .get(`/api/v1/employees/${id}/salary-history`)
+        .set('x-dev-role', 'hr_manager')
+        .expect(200);
+
+      expect(response.headers.etag).toBe('"2"');
+      expect(response.body).toMatchObject({
+        status: 'terminated',
+        terminationDate: '2026-12-31',
+        version: 2,
+      });
+      expect(history.body).toMatchObject([
+        { effectiveFrom: '2026-11-02', effectiveTo: '2026-12-31' },
+      ]);
+    });
+
+    it('sends a person on leave, leaves the salary open and audits it', async () => {
+      const id = await hire();
+
+      await changeStatus(id, {
+        status: 'on_leave',
+        effectiveDate: '2026-12-01',
+      }).expect(200);
+      const audit = await pglite.query(
+        `select before, after, request_id from audit_events
+         where entity_id = $1 and action = 'employee.status_changed'`,
+        [id],
+      );
+      const open = await pglite.query(
+        'select 1 from salary_records where employee_id = $1 and effective_to is null',
+        [id],
+      );
+
+      expect(audit.rows).toEqual([
+        {
+          before: { status: 'active', terminationDate: null },
+          after: {
+            status: 'on_leave',
+            effectiveDate: '2026-12-01',
+            terminationDate: null,
+            closedSalaryRecordId: null,
+          },
+          request_id: 'req-status-1',
+        },
+      ]);
+      expect(open.rows).toHaveLength(1);
+    });
+
+    it('refuses to bring back someone who has left, with 422', async () => {
+      // Noah Davis left at the end of 2025.
+      const response = await changeStatus(await idOf('ACME-000008'), {
+        status: 'active',
+        effectiveDate: '2026-12-01',
+      }).expect(422);
+
+      expect(response.body.code).toBe('employee_terminated');
+    });
+
+    it('refuses a termination on the day the current salary started, with 422', async () => {
+      const id = await hire();
+
+      const response = await changeStatus(id, {
+        status: 'terminated',
+        effectiveDate: '2026-11-02',
+      }).expect(422);
+
+      expect(response.body.code).toBe('termination_before_current_salary');
+    });
+
+    it('answers 409 to a change made on an old version', async () => {
+      const id = await hire();
+      await changeStatus(id, {
+        status: 'on_leave',
+        effectiveDate: '2026-12-01',
+      }).expect(200);
+
+      await changeStatus(id, {
+        status: 'active',
+        effectiveDate: '2027-01-04',
+      }).expect(409);
+    });
+
+    it('is for HR managers: viewers get 403', async () => {
+      await request(app.getHttpServer())
+        .post(`/api/v1/employees/${await idOf('ACME-000001')}/status`)
+        .set('x-dev-role', 'viewer')
+        .set('If-Match', '"1"')
+        .send({ status: 'on_leave', effectiveDate: '2026-12-01' })
+        .expect(403);
     });
   });
 });

@@ -9,10 +9,12 @@ import {
   Money,
   nextEmployeeCode,
   planSalaryChange,
+  planStatusChange,
 } from '@paylens/domain';
 import type {
   CreateEmployeeRequest,
   EmployeeProfile,
+  EmployeeStatusChangeRequest,
   UpdateEmployeeRequest,
 } from '@paylens/shared';
 import { AuditRepository } from '../audit/audit.repository.js';
@@ -169,6 +171,52 @@ export class EmployeeChangesService {
         entityId: id,
         before,
         after,
+        requestId,
+      });
+    });
+
+    return this.people.profile(id, actor);
+  }
+
+  /**
+   * Leave, return or termination (F-11) with If-Match, in one transaction: lock the person,
+   * check the version, plan with the domain rules, close the open salary on a termination,
+   * write the status and audit it.
+   */
+  async changeStatus(
+    id: string,
+    request: EmployeeStatusChangeRequest,
+    expectedVersion: number,
+    actor: AuthenticatedUser,
+    requestId: string | null,
+  ): Promise<EmployeeProfile> {
+    await this.db.transaction(async (tx) => {
+      await this.people.lockAtVersion(tx, id, expectedVersion);
+      const facts = await this.employees.employmentFacts(tx, id);
+      if (facts === null) {
+        throw new NotFoundException('There is no employee with this id');
+      }
+
+      const plan = planStatusChange(facts, request);
+      if (plan.closeSalary !== null) {
+        await this.salaries.close(tx, id, plan.closeSalary);
+      }
+      await this.employees.setStatus(tx, id, plan);
+      await this.audit.append(tx, {
+        actorUserId: actor.id,
+        action: 'employee.status_changed',
+        entityType: 'employee',
+        entityId: id,
+        before: {
+          status: facts.status,
+          terminationDate: facts.terminationDate,
+        },
+        after: {
+          status: plan.status,
+          effectiveDate: request.effectiveDate,
+          terminationDate: plan.terminationDate,
+          closedSalaryRecordId: plan.closeSalary?.recordId ?? null,
+        },
         requestId,
       });
     });
