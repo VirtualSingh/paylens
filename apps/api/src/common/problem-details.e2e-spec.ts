@@ -5,6 +5,7 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { EffectiveDateNotAfterCurrentError } from '@paylens/domain';
 import request from 'supertest';
 import { createTestApp } from '../testing/create-test-app.js';
 
@@ -20,6 +21,11 @@ class FailingController {
   @Get('unavailable')
   unavailable(): never {
     throw new ServiceUnavailableException(`pool exhausted for ${SECRET}`);
+  }
+
+  @Get('rule')
+  rule(): never {
+    throw new EffectiveDateNotAfterCurrentError('2025-04-01');
   }
 }
 
@@ -54,6 +60,21 @@ describe('errors as application/problem+json (RFC 9457)', () => {
       detail: 'Cannot GET /api/v1/no-such-route',
       instance: '/api/v1/no-such-route',
       requestId: 'req-404',
+    });
+  });
+
+  it('reports a broken business rule as a 422 problem with its code', async () => {
+    const response = await request(app.getHttpServer()).get(
+      '/api/v1/test-failures/rule',
+    );
+
+    expect(response.status).toBe(422);
+    expect(response.body).toMatchObject({
+      title: 'Unprocessable Entity',
+      status: 422,
+      code: 'effective_date_not_after_current',
+      detail:
+        'Effective date must be after 2025-04-01, when the current salary started',
     });
   });
 
