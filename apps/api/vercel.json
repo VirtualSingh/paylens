@@ -2,5 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "outputDirectory": "public",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "../../node_modules/.pnpm/swagger-ui-dist@*/node_modules/swagger-ui-dist/{swagger-ui-bundle.js,swagger-ui-standalone-preset.js,swagger-ui.css,index.css,favicon-16x16.png,favicon-32x32.png}"
+    }
+  },
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }
