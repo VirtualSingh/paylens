@@ -8,3 +8,4 @@ export * from './lib/salaries/salary.schema.js';
 export * from './lib/reference/reference.schema.js';
 export * from './lib/employees/employee-write.schema.js';
 export * from './lib/problem/problem-details.schema.js';
+export * from './lib/audit/audit.schema.js';
