@@ -9,6 +9,10 @@ import {
 import { DomainError } from '@paylens/domain';
 import type { Request, Response } from 'express';
 import { STATUS_CODES } from 'node:http';
+import {
+  type FieldError,
+  RequestValidationError,
+} from './zod-validation.pipe.js';
 
 /** RFC 9457 problem details, plus our request id (docs/vault/design/api.md → Errors). */
 export interface ProblemDetails {
@@ -18,6 +22,8 @@ export interface ProblemDetails {
   readonly detail?: string;
   /** For broken business rules: the DomainError's stable code (an RFC 9457 extension). */
   readonly code?: string;
+  /** For invalid input: every field that failed, for inline errors in forms. */
+  readonly errors?: readonly FieldError[];
   readonly instance: string;
   readonly requestId?: string;
 }
@@ -62,7 +68,14 @@ export class ProblemDetailsFilter implements ExceptionFilter {
 /** Status plus what the client may be told; server errors (5xx) are told nothing more. */
 function summarize(
   exception: unknown,
-): Pick<ProblemDetails, 'status' | 'detail' | 'code'> {
+): Pick<ProblemDetails, 'status' | 'detail' | 'code' | 'errors'> {
+  if (exception instanceof RequestValidationError) {
+    return {
+      status: HttpStatus.BAD_REQUEST,
+      detail: exception.message,
+      errors: exception.errors,
+    };
+  }
   if (exception instanceof DomainError) {
     // A broken business rule: the request was understood but cannot be carried out.
     return {
