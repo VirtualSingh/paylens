@@ -173,6 +173,18 @@ describe('Change salary sheet', () => {
     expect(calls).toBe(0);
   });
 
+  it('warns before recording a salary outside the band or an unusually large change', async () => {
+    const { user, sheet } = await openSheet();
+
+    await user.type(sheet.getByLabelText('New salary'), '99,99,999');
+
+    const warnings = sheet.getByRole('list', { name: 'Warnings' });
+    expect(warnings).toHaveTextContent('Above the band maximum of ₹36,00,000');
+    expect(warnings).toHaveTextContent(
+      'A change of +250.9% is unusual — check the amount',
+    );
+  });
+
   it('has no detectable accessibility violations', async () => {
     await openSheet();
 

@@ -25,7 +25,12 @@ import {
   SheetTitle,
 } from '../../components/ui/sheet';
 import { ApiError } from '../../lib/api-client';
-import { formatDate, PER_PERIOD, salaryChange } from '../../lib/format';
+import {
+  formatDate,
+  PER_PERIOD,
+  salaryChange,
+  salaryChangeRatio,
+} from '../../lib/format';
 import { REASON_LABELS } from '../../lib/labels';
 import { useChangeSalary } from './use-change-salary';
 import { employeeKeys } from './use-employee';
@@ -45,6 +50,9 @@ const FIELD_OF_RULE: Readonly<Record<string, FieldPath<ChangeForm>>> = {
   salary_not_positive: 'amount',
   salary_currency_not_country_currency: 'amount',
 };
+
+/** A change bigger than this share of the current salary gets a warning. */
+const UNUSUAL_CHANGE = 0.25;
 
 const POSITION_WORDS = {
   below: 'below band',
@@ -376,6 +384,23 @@ function Preview({
           max: Money.of(BigInt(band.max.amountMinor), currency),
         });
 
+  const warnings: string[] = [];
+  if (band !== null && after?.position === 'above') {
+    warnings.push(`Above the band maximum of ${formatMoney(band.max)}`);
+  }
+  if (band !== null && after?.position === 'below') {
+    warnings.push(`Below the band minimum of ${formatMoney(band.min)}`);
+  }
+  const ratio = salaryChangeRatio(
+    { salary: pay.salary, frequency: pay.frequency },
+    { salary: json(amount), frequency },
+  );
+  // More than a quarter either way is rare for one change, and the usual sign of a typo
+  // (an extra zero, or a monthly amount entered as annual).
+  if (ratio !== null && Math.abs(ratio) > UNUSUAL_CHANGE && percent !== null) {
+    warnings.push(`A change of ${percent} is unusual — check the amount`);
+  }
+
   return (
     <section
       aria-labelledby="change-preview"
@@ -400,6 +425,16 @@ function Preview({
           </>
         )}
       </dl>
+      {warnings.length > 0 && (
+        <ul
+          aria-label="Warnings"
+          className="flex flex-col gap-0.5 text-sm text-below"
+        >
+          {warnings.map((warning) => (
+            <li key={warning}>▲ {warning}</li>
+          ))}
+        </ul>
+      )}
       {reason === 'promotion' && (
         <p className="text-sm text-muted-foreground">
           Promotion to a new level? Change the level in Details first, so the

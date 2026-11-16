@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { BandBar } from '../../components/band-bar';
 import { DataTable } from '../../components/data-table';
-import { MoneyText } from '../../components/money';
+import { formatMoney, MoneyText } from '../../components/money';
 import { EmptyState, ErrorState } from '../../components/page-states';
 import { useCanManagePay } from '../../lib/current-role';
 import { useCountries, useDepartments, useJobLevels } from '../../lib/lookups';
@@ -195,10 +195,14 @@ function useDirectoryColumns(): ColumnDef<EmployeeListItem>[] {
         meta: { numeric: true },
         cell: ({ row }) => {
           const salary = row.original.pay;
+          // As recorded; most Indian salaries are monthly, so the period is said.
           return salary === null || salary === undefined ? (
             '—'
           ) : (
-            <MoneyText money={salary.salary} />
+            <span className="tabular-nums">
+              {formatMoney(salary.salary)}
+              {salary.frequency === 'monthly' ? ' / month' : ''}
+            </span>
           );
         },
       },

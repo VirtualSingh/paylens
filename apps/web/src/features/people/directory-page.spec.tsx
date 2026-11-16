@@ -142,6 +142,21 @@ describe('People directory', () => {
     expect(router.state.location.search).toBe('');
   });
 
+  it('says when a salary is paid monthly', async () => {
+    const monthly = {
+      ...mehtaListItem,
+      pay: mehtaListItem.pay && {
+        ...mehtaListItem.pay,
+        salary: { amountMinor: '15000000', currency: 'INR' },
+        frequency: 'monthly' as const,
+      },
+    };
+    answerDirectory(directoryPage([monthly]));
+    renderRoute('/people');
+
+    expect(await screen.findByText('₹1,50,000 / month')).toBeInTheDocument();
+  });
+
   it('has no detectable accessibility violations', async () => {
     answerDirectory();
     const { container } = renderRoute('/people');

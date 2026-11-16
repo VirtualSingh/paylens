@@ -40,16 +40,25 @@ export function salaryChange(
   from: { salary: MoneyJson; frequency: PayFrequencyName },
   to: { salary: MoneyJson; frequency: PayFrequencyName },
 ): string | null {
+  const ratio = salaryChangeRatio(from, to);
+  if (ratio === null) {
+    return null;
+  }
+  const percent = ratio * 100;
+  return `${percent >= 0 ? '+' : ''}${percent.toFixed(1)}%`;
+}
+
+/** The same change as a fraction (0.14 = 14% more); null across currencies or from zero. */
+export function salaryChangeRatio(
+  from: { salary: MoneyJson; frequency: PayFrequencyName },
+  to: { salary: MoneyJson; frequency: PayFrequencyName },
+): number | null {
   if (from.salary.currency !== to.salary.currency) {
     return null;
   }
   const before = annualYearly(from).amountMinor;
   const after = annualYearly(to).amountMinor;
-  if (before === 0n) {
-    return null;
-  }
-  const percent = (Number(after - before) / Number(before)) * 100;
-  return `${percent >= 0 ? '+' : ''}${percent.toFixed(1)}%`;
+  return before === 0n ? null : Number(after - before) / Number(before);
 }
 
 function annualYearly(value: {
