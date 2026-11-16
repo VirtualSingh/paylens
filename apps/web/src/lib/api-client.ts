@@ -1,6 +1,10 @@
-import { type ProblemDetails, ProblemDetailsSchema } from '@paylens/shared';
+import {
+  ACTING_ROLE_HEADER,
+  type ProblemDetails,
+  ProblemDetailsSchema,
+} from '@paylens/shared';
 import type { z } from 'zod';
-import { devRole } from './dev-role';
+import { actingRole } from './acting-role';
 
 /** Same origin: Vite proxies /api in development, Vercel rewrites it in production. */
 const API_BASE = '/api/v1';
@@ -44,10 +48,8 @@ export async function apiRequest<Schema extends z.ZodType>(
   if (options.ifMatch !== undefined) {
     headers.set('If-Match', options.ifMatch);
   }
-  const role = devRole();
-  if (role !== null) {
-    headers.set('x-dev-role', role);
-  }
+  // Sign-in off: the role to view as. Sign-in on: ignored by the API (ADR-014).
+  headers.set(ACTING_ROLE_HEADER, actingRole());
 
   const response = await fetch(
     new URL(API_BASE + path, window.location.origin),
@@ -62,7 +64,10 @@ export async function apiRequest<Schema extends z.ZodType>(
   if (!response.ok) {
     throw new ApiError(await problemFrom(response));
   }
-  const parsed = schema.safeParse(await response.json());
+  // 204 No Content (sign-out) has no body to read.
+  const body: unknown =
+    response.status === 204 ? undefined : await response.json();
+  const parsed = schema.safeParse(body);
   if (!parsed.success) {
     throw new Error(
       `The API answered ${method} ${path} with an unexpected shape`,

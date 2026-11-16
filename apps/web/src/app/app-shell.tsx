@@ -1,11 +1,13 @@
 import { USER_ROLES, type UserRole } from '@paylens/shared';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
-import { useCurrentRole } from '../lib/current-role';
+import { Button } from '../components/ui/button';
 import { reportingCurrencies, useCountries } from '../lib/lookups';
 import { useReportingCurrency } from '../lib/reporting-currency';
+import { type Session, useSession } from '../lib/session';
 import { CommandPalette } from './command-palette';
 import { SECTIONS } from './sections';
+import { SignInPage } from './sign-in-page';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   viewer: 'Viewer',
@@ -18,6 +20,18 @@ const selectClass =
 
 /** Left navigation (240 px) + top bar (56 px) + content with 24 px padding (ui.md → Layout). */
 export function AppShell() {
+  const session = useSession();
+  if (session.status === 'loading') {
+    return <p className="p-6 text-muted-foreground">Loading PayLens…</p>;
+  }
+  if (session.status === 'signed-out') {
+    return (
+      <SignInPage
+        googleClientId={session.googleClientId}
+        onSignedIn={session.refresh}
+      />
+    );
+  }
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-line">
@@ -45,7 +59,7 @@ export function AppShell() {
         </nav>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
+        <TopBar session={session} />
         <CommandPalette />
         <main className="flex-1 p-6">
           <Outlet />
@@ -55,13 +69,23 @@ export function AppShell() {
   );
 }
 
-function TopBar() {
+function TopBar({ session }: { session: Session }) {
   return (
     <header className="flex h-14 items-center gap-6 border-b border-line px-6">
       <PeopleSearch />
       <div className="ml-auto flex items-center gap-6">
         <ReportingCurrencySwitch />
-        {import.meta.env.DEV && <DevRoleSwitch />}
+        {session.status === 'open' && (
+          <ViewingAsSwitch role={session.role} setRole={session.setRole} />
+        )}
+        {session.status === 'signed-in' && (
+          <div className="flex items-center gap-3 text-sm">
+            <span>{session.user.displayName}</span>
+            <Button variant="ghost" onClick={() => void session.signOut()}>
+              Sign out
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   );
@@ -130,15 +154,23 @@ function ReportingCurrencySwitch() {
   );
 }
 
-/** TEMPORARY until sign-in (2.1): development builds only; see lib/dev-role.ts. */
-function DevRoleSwitch() {
-  const { role, setRole } = useCurrentRole();
+/**
+ * Sign-in off (ADR-014): anyone may view PayLens as any role, to see what each may do —
+ * a viewer, for example, sees no individual pay.
+ */
+function ViewingAsSwitch({
+  role,
+  setRole,
+}: {
+  role: UserRole;
+  setRole: (role: UserRole) => void;
+}) {
   return (
     <label className="flex items-center gap-2 text-sm text-muted-foreground">
-      Acting as (development only)
+      Viewing as
       <select
         className={selectClass}
-        value={role ?? 'hr_manager'}
+        value={role}
         onChange={(event) => {
           const next = USER_ROLES.find(
             (candidate) => candidate === event.target.value,

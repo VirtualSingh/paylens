@@ -93,12 +93,10 @@ describe('App shell', () => {
     expect(select).toHaveValue('GBP');
   });
 
-  it('lets a developer act as any role until sign-in exists', async () => {
+  it('lets anyone pick the role to view as while sign-in is off', async () => {
     renderRoute('/');
 
-    const roles = await screen.findByRole('combobox', {
-      name: 'Acting as (development only)',
-    });
+    const roles = await screen.findByRole('combobox', { name: 'Viewing as' });
 
     expect(
       within(roles)

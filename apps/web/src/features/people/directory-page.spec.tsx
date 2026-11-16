@@ -93,7 +93,7 @@ describe('People directory', () => {
   });
 
   it('shows viewers the directory without anyone’s pay', async () => {
-    localStorage.setItem('paylens.devRole', 'viewer');
+    localStorage.setItem('paylens.actingRole', 'viewer');
     const masked = [guptaListItem, mehtaListItem].map(
       ({ pay: _pay, ...rest }) => rest,
     );

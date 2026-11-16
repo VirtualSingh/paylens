@@ -12,7 +12,7 @@ import { DataTable } from '../../components/data-table';
 import { formatMoney, MoneyText } from '../../components/money';
 import { EmptyState, ErrorState } from '../../components/page-states';
 import { Button } from '../../components/ui/button';
-import { useCanManagePay } from '../../lib/current-role';
+import { useCanManagePay } from '../../lib/session';
 import { useCountries, useDepartments, useJobLevels } from '../../lib/lookups';
 import { useReportingCurrency } from '../../lib/reporting-currency';
 import {

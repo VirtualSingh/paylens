@@ -4,8 +4,6 @@ import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { AppProviders } from '../app/providers';
 import { routes } from '../app/routes';
-import { lookupHandlers } from './fixtures';
-import { server } from './msw';
 
 /**
  * Renders the real app (providers, shell, routes) at `path`, against MSW. Each call gets a
@@ -18,7 +16,6 @@ export type RenderedRoute = RenderResult & {
 };
 
 export function renderRoute(path: string): RenderedRoute {
-  server.use(...lookupHandlers);
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },

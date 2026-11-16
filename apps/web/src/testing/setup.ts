@@ -1,6 +1,7 @@
 // Adds Testing Library's DOM matchers (toBeInTheDocument, toHaveAttribute …) to Vitest.
 import '@testing-library/jest-dom/vitest';
 import { configure } from '@testing-library/react';
+import { lookupHandlers } from './fixtures';
 import { server } from './msw';
 
 // `findBy…` waits 1 s by default. With lint and typecheck on the same CPU (pre-commit hook,
@@ -9,6 +10,8 @@ import { server } from './msw';
 configure({ asyncUtilTimeout: 10_000 });
 
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
+// Registered first, so a spec's own server.use(...) answers ahead of them.
+beforeEach(() => server.use(...lookupHandlers));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

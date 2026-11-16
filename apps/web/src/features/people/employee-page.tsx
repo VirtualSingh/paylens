@@ -15,7 +15,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '../../components/ui/tabs';
-import { useCanManagePay } from '../../lib/current-role';
+import { useCanManagePay } from '../../lib/session';
 import {
   formatDate,
   formatDateTime,

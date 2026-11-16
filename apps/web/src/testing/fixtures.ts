@@ -140,6 +140,10 @@ export const mehtaHistory: SalaryRecordJson[] = [
 
 /** Answers for the lookups every screen may ask for; specs add their own on top. */
 export const lookupHandlers = [
+  // Sign-in off unless a spec says otherwise (ADR-014).
+  http.get('/api/v1/auth/config', () =>
+    HttpResponse.json({ authEnabled: false, googleClientId: null }),
+  ),
   http.get('/api/v1/countries', () => HttpResponse.json(countries)),
   http.get('/api/v1/departments', () => HttpResponse.json(departments)),
   http.get('/api/v1/job-families', () => HttpResponse.json(jobFamilies)),

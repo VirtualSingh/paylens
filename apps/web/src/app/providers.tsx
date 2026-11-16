@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { Toaster } from 'sonner';
 import { ApiError } from '../lib/api-client';
-import { CurrentRoleProvider } from '../lib/current-role';
+import { SessionProvider } from '../lib/session';
 import { ReportingCurrencyProvider } from '../lib/reporting-currency';
 
 /** Retry network blips and server errors, never a 4xx: asking again will not change it. */
@@ -29,13 +29,13 @@ export function AppProviders({
   const [client] = useState(() => queryClient ?? createQueryClient());
   return (
     <QueryClientProvider client={client}>
-      <CurrentRoleProvider>
+      <SessionProvider>
         <ReportingCurrencyProvider>
           {children}
           {/* Toasts repeat the verb of the action (ui.md → Feedback); a polite live region. */}
           <Toaster position="bottom-right" />
         </ReportingCurrencyProvider>
-      </CurrentRoleProvider>
+      </SessionProvider>
     </QueryClientProvider>
   );
 }

@@ -69,8 +69,9 @@ describe('Employee profile', () => {
     expect(
       await screen.findByRole('heading', { name: 'Aarav Mehta' }),
     ).toBeInTheDocument();
+    // The country's name arrives with the countries lookup, which may answer after the profile.
     expect(
-      screen.getByText(
+      await screen.findByText(
         'ACME-000001 · Engineering · Software Engineer · IC4 · India',
       ),
     ).toBeInTheDocument();
@@ -132,7 +133,7 @@ describe('Employee profile', () => {
   });
 
   it('shows viewers no pay, no salary history and no way to change it', async () => {
-    localStorage.setItem('paylens.devRole', 'viewer');
+    localStorage.setItem('paylens.actingRole', 'viewer');
     const { pay: _pay, gender: _gender, ...masked } = mehtaProfile;
     answerProfile(masked);
     renderRoute(`/people/${MEHTA_ID}`);

@@ -134,7 +134,7 @@ describe('Add employee sheet', () => {
   }, 30_000);
 
   async function openAdd(role = 'hr_manager') {
-    localStorage.setItem('paylens.devRole', role);
+    localStorage.setItem('paylens.actingRole', role);
     server.use(
       http.get('/api/v1/employees', () => HttpResponse.json(directoryPage())),
     );
