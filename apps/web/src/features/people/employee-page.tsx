@@ -33,6 +33,7 @@ import {
 import { useCountries } from '../../lib/lookups';
 import { EditDetailsSheet } from './edit-details-sheet';
 import { SalaryChangeSheet } from './salary-change-sheet';
+import { SalaryHistoryChart } from './salary-history-chart';
 import { StatusSheet } from './status-sheet';
 import {
   useEmployee,
@@ -272,34 +273,37 @@ function SalaryHistory({ id }: { id: string }) {
   }
   const records = history.data;
   return (
-    <table className="w-full border-collapse text-base">
-      <caption className="sr-only">Salary history</caption>
-      <thead>
-        <tr className="border-b border-line text-left text-muted-foreground">
-          <th scope="col" className="h-9 px-3 font-medium">
-            Effective from
-          </th>
-          <th scope="col" className="h-9 px-3 text-right font-medium">
-            Salary
-          </th>
-          <th scope="col" className="h-9 px-3 font-medium">
-            Reason
-          </th>
-          <th scope="col" className="h-9 px-3 text-right font-medium">
-            Change
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {records.map((record, index) => (
-          <HistoryRow
-            key={record.id}
-            record={record}
-            previous={records[index + 1]}
-          />
-        ))}
-      </tbody>
-    </table>
+    <div className="flex flex-col gap-4">
+      <SalaryHistoryChart records={records} />
+      <table className="w-full border-collapse text-base">
+        <caption className="sr-only">Salary history</caption>
+        <thead>
+          <tr className="border-b border-line text-left text-muted-foreground">
+            <th scope="col" className="h-9 px-3 font-medium">
+              Effective from
+            </th>
+            <th scope="col" className="h-9 px-3 text-right font-medium">
+              Salary
+            </th>
+            <th scope="col" className="h-9 px-3 font-medium">
+              Reason
+            </th>
+            <th scope="col" className="h-9 px-3 text-right font-medium">
+              Change
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((record, index) => (
+            <HistoryRow
+              key={record.id}
+              record={record}
+              previous={records[index + 1]}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

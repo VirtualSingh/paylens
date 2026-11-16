@@ -27,3 +27,7 @@ globalThis.ResizeObserver ??= class {
 Element.prototype.scrollIntoView ??= function scrollIntoView(): void {
   // jsdom does not scroll; cmdk only calls this to keep the active item in view.
 };
+
+// jsdom has no layout, so charts are not drawn in component tests; what they show is tested
+// as pure functions (e.g. features/people/salary-history-chart.spec.tsx).
+vi.mock('../components/echart', () => ({ default: () => null }));

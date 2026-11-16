@@ -103,6 +103,17 @@ describe('Employee profile', () => {
     ]);
   });
 
+  it('charts the history and says what the chart shows', async () => {
+    answerProfile();
+    renderRoute(`/people/${MEHTA_ID}`);
+
+    const figure = await screen.findByRole('figure');
+
+    expect(figure).toHaveTextContent(
+      'Annual salary from ₹25,00,000 on 1 Apr 2022 to ₹28,50,000 on 1 Apr 2024, over 2 salaries.',
+    );
+  });
+
   it('shows who changed what on the audit tab', async () => {
     answerProfile();
     const { user } = renderRoute(`/people/${MEHTA_ID}`);
