@@ -15,10 +15,15 @@ https://paylens-web-black.vercel.app/api/docs
 
 > Status: Phase 2 of 5. The API for people, pay, bands, FX and the audit log is complete
 > ([OpenAPI](docs/api/openapi.json)); the web app has the directory, profiles, the
-> change-salary sheet and add / edit / status. **Sign-in is not built yet**, so the live site
-> answers "sign in to continue": run it locally to use it (below). What is being built and in
-> which order: [`docs/requirements.md`](docs/requirements.md) and
-> [`docs/vault/plan.md`](docs/vault/plan.md).
+> change-salary sheet and add / edit / status. What is being built and in which order:
+> [`docs/requirements.md`](docs/requirements.md) and [`docs/vault/plan.md`](docs/vault/plan.md).
+
+**No sign-in needed to review.** Sign-in is behind one flag, `AUTH_ENABLED`, off by default
+([ADR-014](docs/decisions/ADR-014-auth-feature-flag.md)): the live site opens straight into the
+app as a demo HR manager. Switch **Viewing as** (top right) to Viewer to watch individual pay
+disappear, or to Admin. Every change is recorded against that demo user in the audit log. With
+`AUTH_ENABLED=true`, "Sign in with Google" is required and the role switch is gone. The demo
+data is generated; feel free to change it.
 
 ## Run it locally (about 5 minutes)
 
@@ -36,8 +41,8 @@ pnpm dev                             # web on http://localhost:4200, API proxied
 
 Check: http://localhost:4200/people lists 10,000 people, and
 http://localhost:4200/api/v1/health/ready answers `{"status":"ok","checks":{"database":"up"}}`.
-Until sign-in exists, development builds act as the role chosen in the top bar ("Acting as");
-switch to Viewer to see individual pay disappear. Production builds never send that role.
+Sign-in is off locally too (`AUTH_ENABLED=false` in `.env`); set it to `true`, with your Google
+client id in `GOOGLE_CLIENT_ID` and your email in `ADMIN_EMAILS`, to try Google sign-in.
 
 ## Tests
 
@@ -56,8 +61,8 @@ Tests worth reading first:
 - **Who may do what** —
   [`authorization-matrix.e2e-spec.ts`](apps/api/src/auth/authorization-matrix.e2e-spec.ts):
   every route × anonymous / viewer / HR manager / admin → 401, 403 or success, and exactly
-  one audit event per change. Its route table must match the OpenAPI document, so a new
-  route cannot skip it.
+  one audit event per change, with sign-in on (anonymous) and off (acting roles). Its route
+  table must match the OpenAPI document, so a new route cannot skip it.
 - **The API contract** — [`openapi-docs.e2e-spec.ts`](apps/api/src/common/openapi-docs.e2e-spec.ts)
   fails when [`docs/api/openapi.json`](docs/api/openapi.json) drifts from the code
   (`pnpm openapi` regenerates it).

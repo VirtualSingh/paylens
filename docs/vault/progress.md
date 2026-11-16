@@ -12,28 +12,29 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Current state (as of 2026-11-16)
 
-- **Phases 0–1 done; Phase 2 done except sign-in** (2.1 parked by Pushpendra) and three UI
-  extras (below). Until sign-in, the live site answers "sign in to continue"; run locally.
+- **Phases 0–1 done; Phase 2 done** except the directory's column chooser/density and
+  multi-select filters. Sign-in is behind `AUTH_ENABLED` (ADR-014), **off** in production:
+  the live site opens as the demo HR manager; "Viewing as" switches role. On = Google sign-in.
 - API: people, pay, bands, FX, audit log (`GET /audit`, `/employees/:id/audit`); every route
   in the role × endpoint matrix (69 cases); OpenAPI 3.1 committed and drift-tested.
-- Web: shell (search, reporting currency, dev-only role switch), directory (URL state, server
+- Web: shell (search, ⌘K palette, reporting currency, "Viewing as"), directory (URL state, server
   sort/filters/paging, band bars, viewer masking), profile (pay on the band, history, details,
-  audit), sheets: change salary (domain preview, warnings, If-Match), status (typed-code
-  termination), add employee, edit details. Checked on the real 10k stack in Chromium.
-- Neon production: 3 migrations, 10,000 employees seeded. Google client id stored (Vercel, .env).
+  audit, history chart), sheets: change salary (domain preview, warnings, If-Match), status
+  (typed-code termination), add employee, edit details. Checked live in Chromium.
+- Neon production: 4 migrations (0003: sessions + demo users), 10,000 employees. Vercel api:
+  `AUTH_ENABLED=false`, `GOOGLE_CLIENT_ID` set.
 - Tests 453 green: domain 86 (100% coverage) · shared 70 · api 229 · web 68. CI green.
 
 ## Now (next 3 steps)
 
-1. ⌘K command palette (navigate, find a person) — ui.md → Keyboard; plan 2.3.
-2. Salary-history chart on the profile (ECharts step line, lazy-loaded) — plan 2.5.
-3. Directory column chooser and density toggle (36/40 px rows) — plan 2.4.
+1. D-8 below (CSP vs runtime-injected styles), then apply the chosen fix.
+2. Directory column chooser and density toggle (36/40 px rows) — plan 2.4.
+3. Multi-select filter popovers with chips — plan 2.4.
 
 ## Next (this phase)
 
-- 2.1 sign-in when Pushpendra un-parks it: sessions, demo login, Google (client id is in place),
-  `/auth/me`; then remove `x-dev-role` and the web's dev role switch; deployed journey (exit).
-- Multi-select filter popovers with chips (today: one value per filter, URL supports many).
+- Google sign-in on the live site, once (flip `AUTH_ENABLED=true`, sign in, flip back) to tick
+  the Phase 2 exit; rate limiting on /auth (Phase 4).
 - Api suite under 40 s (per-file PGlite + Nest boot dominate).
 
 ## Later (next phases)
@@ -46,7 +47,7 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 | # | Decision | Default if no answer | Owner | Due |
 |---|---|---|---|---|
 | D-3 | Assistant model for the demo: Claude Haiku (~$5) vs Gemini Flash-Lite (free) | Provider-neutral code; demo on Gemini Flash-Lite if no key is funded by Phase 4 | Pushpendra | 2026-11-17 |
-| D-7 | When to build sign-in (2.1), parked on 2026-11-16 | Keep building the rest; ask again after the Phase 2 UI extras | Pushpendra | — |
+| D-8 | Live CSP blocks runtime `<style>` blocks (sonner toasts, Radix scroll lock) → toasts unstyled. Allow inline styles, or pin the 3 hashes? | Pin the hashes (stays strict; update on library upgrades) | Pushpendra | 2026-11-17 |
 
 D-1, D-2, D-4, D-5 are closed (React; gender female/male; public repo; `main` with CI);
 D-6 closed 2026-11-16: the Google OAuth client exists (JavaScript origins only, no redirect
@@ -68,8 +69,9 @@ URIs — the ID-token flow) — see [progress/decisions-archive.md](progress/dec
 - 2026-11-15 · `@ApiContract` documents each route from the Zod schemas it validates with;
   problem+json and its `ProblemDetails` contract live in libs/shared for the web app.
 - 2026-11-15 · The agent checks CI after every push (CI was red four pushes unnoticed).
-- 2026-11-16 · Until sign-in, development builds send the role picked in the top bar as
-  `x-dev-role` (inert in production, never sent by production builds); 2.1 replaces it.
+- 2026-11-16 · Sign-in flag (ADR-014): off by default; demo users (migration 0003) act for
+  visitors via `x-acting-role`; on = Google ID token → hashed session, `__Host-` cookie.
+  D-7 closed: sign-in built behind the flag.
 - 2026-11-16 · TanStack Table pinned to 8 (v9 changed its hook API; the table is server-side).
   React Router 8 (current; the plan said 7 — same data-router API).
 - 2026-11-16 · Filters are one native select each for now (accessible, URL already multi-value);

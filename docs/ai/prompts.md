@@ -98,3 +98,13 @@ Template:
 - Caught by running the real stack, not by fixtures: monthly salaries shown without "/ month",
   and no warning on a +14,227% typo in the salary preview. Both fixed with tests.
 - Commits: daa173b … d9afee9 (+ this wrap-up).
+
+## 2026-11-16 · Claude Code (Opus) · sign-in behind a flag (ADR-014)
+- Prompt: "add a feature flag to disable auth flow … when false the app works without
+  sign-in, when true you sign in with Google … initially false … all the APIs must respect this
+  contract even the DB … I don't want to force the recruiter and reviewer to log in first".
+- Shaped by the agent: "off" acts as seeded demo users per role (not "no user"), so audit
+  events and `created_by` still name an actor and viewer masking still demonstrates itself.
+- Refused by the permission check, left to Pushpendra: relaxing the web CSP's style-src for
+  runtime-injected styles (D-8). The agent had proposed `'unsafe-inline'` for styles.
+- Commits: 05532fa … d992e5a (+ this wrap-up).
