@@ -187,3 +187,69 @@ describe('GET /api/v1/analytics/breakdown', () => {
       .expect(400);
   });
 });
+
+/*
+ * Band positions of the active people, by level (penetration = (annual − min) ÷ (max − min)):
+ *   IC3: Sharma 0.25 within
+ *   IC4: Mehta 0.375, Gupta −0.1667 below, Johnson 0.6, Brown −0.1 below, Wilson 0.5,
+ *        Taylor 0.125, Clarke −0.05 below, Evans 1.125 above
+ *   M1:  Smith 0.6786 within
+ */
+describe('GET /api/v1/analytics/band-positioning', () => {
+  let pglite: PGlite;
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    pglite = await createTestDatabase();
+    await seedMiniAcme(pglite);
+    app = await createTestApp({
+      database: drizzle(pglite),
+      today: '2026-11-14',
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+    await pglite.close();
+  });
+
+  const positioning = (role: string) =>
+    request(app.getHttpServer())
+      .get('/api/v1/analytics/band-positioning')
+      .set('x-acting-role', role)
+      .expect(200);
+
+  it('gives HR managers one point per person, by code, per level in ladder order', async () => {
+    const response = await positioning('hr_manager');
+
+    const ic4 = response.body.levels.find(
+      (level: { levelCode: string }) => level.levelCode === 'IC4',
+    );
+    expect(
+      response.body.levels.map(
+        (level: { levelCode: string }) => level.levelCode,
+      ),
+    ).toEqual(['IC3', 'IC4', 'M1']);
+    expect(ic4).toMatchObject({ below: 3, within: 4, above: 1 });
+    expect(ic4.points).toContainEqual({
+      employeeCode: 'ACME-000012',
+      penetration: 1.125,
+      position: 'above',
+    });
+    expect(ic4.points).toContainEqual({
+      employeeCode: 'ACME-000003',
+      penetration: -0.1667,
+      position: 'below',
+    });
+  });
+
+  it('gives viewers the counts, without anyone’s point', async () => {
+    const response = await positioning('viewer');
+
+    expect(response.body.levels).toEqual([
+      { levelCode: 'IC3', below: 0, within: 1, above: 0 },
+      { levelCode: 'IC4', below: 3, within: 4, above: 1 },
+      { levelCode: 'M1', below: 0, within: 1, above: 0 },
+    ]);
+  });
+});

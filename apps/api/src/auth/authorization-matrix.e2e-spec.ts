@@ -69,6 +69,12 @@ const ROUTES: readonly RouteCase[] = [
     mutates: false,
   },
   {
+    route: 'GET /api/v1/analytics/band-positioning',
+    minimum: 'viewer',
+    success: 200,
+    mutates: false,
+  },
+  {
     route: 'GET /api/v1/analytics/breakdown',
     query: '?by=country',
     minimum: 'viewer',

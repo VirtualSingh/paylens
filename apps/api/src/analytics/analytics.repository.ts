@@ -7,6 +7,8 @@ import { column, selectRows } from '../db/select-rows.js';
 
 /** One active person on a date: their salary then, and their band then (local currency). */
 export interface CompRow {
+  /** For people (band positioning points): the code, never the name. */
+  readonly employeeCode: string;
   /** What a breakdown can group by: code and the label people read. */
   readonly country: { readonly key: string; readonly label: string };
   readonly department: { readonly key: string; readonly label: string };
@@ -42,7 +44,7 @@ export class AnalyticsRepository {
   async compOn(asOf: IsoDate): Promise<CompRow[]> {
     const rows = await selectRows(
       this.db,
-      sql`select e.country_code, c.name as country_name, d.code as department_code,
+      sql`select e.employee_code, e.country_code, c.name as country_name, d.code as department_code,
                  d.name as department_name, l.code as level_code,
                  (case l.track when 'ic' then 0 else 100 end + l.rank)::int as level_order,
                  s.amount_minor::text, s.currency_code, s.pay_frequency::text,
@@ -70,6 +72,7 @@ export class AnalyticsRepository {
       const amount = column.textOrNull(row, 'amount_minor');
       const min = column.textOrNull(row, 'min_minor');
       return {
+        employeeCode: column.text(row, 'employee_code'),
         country: {
           key: column.text(row, 'country_code'),
           label: column.text(row, 'country_name'),

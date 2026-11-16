@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { MoneyJsonSchema } from '../money/money-json.schema.js';
+import { BAND_POSITIONS } from '../employees/employee-enums.js';
 import { CurrencyCodeSchema } from '../reference/reference.schema.js';
 
 /** Every analytics question: in which currency, and on which day (default: today). */
@@ -68,3 +69,30 @@ export const AnalyticsBreakdownSchema = z.object({
   rows: z.array(BreakdownRowSchema),
 });
 export type AnalyticsBreakdown = z.infer<typeof AnalyticsBreakdownSchema>;
+
+/** One person in the strip plot: by employee code, never by name (analytics.md). */
+export const BandPointSchema = z.object({
+  employeeCode: z.string(),
+  /** (annual − min) ÷ (max − min), 4 decimals: below 0 under the band, above 1 over it. */
+  penetration: z.number(),
+  position: z.enum(BAND_POSITIONS),
+});
+
+/**
+ * `GET /analytics/band-positioning` — where people sit in their bands, per level in ladder
+ * order (the dashboard's hero). Points only for HR managers and admins; viewers get counts.
+ */
+export const BandPositioningSchema = z.object({
+  asOf: z.iso.date(),
+  levels: z.array(
+    z.object({
+      levelCode: z.string(),
+      below: z.number().int(),
+      within: z.number().int(),
+      above: z.number().int(),
+      points: z.array(BandPointSchema).optional(),
+    }),
+  ),
+});
+export type BandPositioning = z.infer<typeof BandPositioningSchema>;
+export type BandPoint = z.infer<typeof BandPointSchema>;

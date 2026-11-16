@@ -12,6 +12,11 @@ import {
   P75,
   percentileCont,
 } from '@paylens/domain';
+import {
+  type BandPoint,
+  type BandPositioning,
+  hasAtLeast,
+} from '@paylens/shared';
 import type {
   AnalyticsBreakdown,
   AnalyticsBreakdownQuery,
@@ -20,6 +25,7 @@ import type {
   BreakdownRow,
   MoneyJson,
 } from '@paylens/shared';
+import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 import { Clock } from '../common/clock.js';
 import { FxRepository } from '../fx/fx.repository.js';
 import { AnalyticsRepository, type CompRow } from './analytics.repository.js';
@@ -34,6 +40,8 @@ interface Measured {
   readonly reporting: bigint | null;
   /** null with no salary on the date. */
   readonly position: BandPosition | 'noBand' | null;
+  /** Range penetration (4 decimals); null with no salary or no band. */
+  readonly penetration: number | null;
   readonly unconverted: boolean;
 }
 
@@ -140,6 +148,61 @@ export class AnalyticsService {
     };
   }
 
+  /**
+   * Where people sit in their bands, per level in ladder order (canonical question 7). Points
+   * by employee code for HR managers and admins; viewers get only the counts (analytics.md).
+   */
+  async bandPositioning(
+    query: AnalyticsQuery,
+    reader: AuthenticatedUser,
+  ): Promise<BandPositioning> {
+    const { asOf, measured } = await this.measure(query);
+    const showPoints = hasAtLeast(reader.role, 'hr_manager');
+    const levels = new Map<
+      string,
+      {
+        order: number;
+        counts: Record<BandPosition, number>;
+        points: BandPoint[];
+      }
+    >();
+    for (const person of measured) {
+      const { position, penetration, row } = person;
+      if (position === null || position === 'noBand' || penetration === null) {
+        continue;
+      }
+      let level = levels.get(row.level.key);
+      if (level === undefined) {
+        level = {
+          order: row.level.order,
+          counts: { below: 0, within: 0, above: 0 },
+          points: [],
+        };
+        levels.set(row.level.key, level);
+      }
+      level.counts[position] += 1;
+      level.points.push({
+        employeeCode: row.employeeCode,
+        penetration,
+        position,
+      });
+    }
+    return {
+      asOf,
+      levels: [...levels.entries()]
+        .sort(([a, x], [b, y]) => x.order - y.order || a.localeCompare(b))
+        .map(([levelCode, level]) => ({
+          levelCode,
+          ...level.counts,
+          ...(showPoints && {
+            points: level.points.toSorted(
+              (p, q) => p.penetration - q.penetration,
+            ),
+          }),
+        })),
+    };
+  }
+
   private async measure(
     query: AnalyticsQuery,
   ): Promise<{ asOf: IsoDate; measured: Measured[] }> {
@@ -165,29 +228,38 @@ function measureOne(
 ): Measured {
   const { salary, band } = row;
   if (salary === null) {
-    return { row, reporting: null, position: null, unconverted: false };
+    return {
+      row,
+      reporting: null,
+      position: null,
+      penetration: null,
+      unconverted: false,
+    };
   }
   const annual = annualize(
     Money.of(salary.amountMinor, salary.currency),
     salary.frequency,
   );
-  const position =
+  const metrics =
     band === null || band.currency !== annual.currency
-      ? 'noBand'
+      ? null
       : bandMetrics(annual, {
           min: Money.of(band.minMinor, band.currency),
           mid: Money.of(band.midMinor, band.currency),
           max: Money.of(band.maxMinor, band.currency),
-        }).position;
+        });
+  const position = metrics === null ? 'noBand' : metrics.position;
+  const penetration = metrics === null ? null : metrics.rangePenetration;
   const converted = fx.convert(annual, currency, asOf);
   return converted.kind === 'converted'
     ? {
         row,
         reporting: converted.money.amountMinor,
         position,
+        penetration,
         unconverted: false,
       }
-    : { row, reporting: null, position, unconverted: true };
+    : { row, reporting: null, position, penetration, unconverted: true };
 }
 
 function aggregate(members: readonly Measured[]): Aggregate {

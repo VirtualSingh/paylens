@@ -9,8 +9,11 @@ import {
   AnalyticsQuerySchema,
   type AnalyticsSummary,
   AnalyticsSummarySchema,
+  type BandPositioning,
+  BandPositioningSchema,
 } from '@paylens/shared';
-import { Roles } from '../auth/access.decorators.js';
+import { CurrentUser, Roles } from '../auth/access.decorators.js';
+import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 import { ApiContract } from '../common/api-contract.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AnalyticsService } from './analytics.service.js';
@@ -56,5 +59,25 @@ export class AnalyticsController {
     query: AnalyticsBreakdownQuery,
   ): Promise<AnalyticsBreakdown> {
     return this.analytics.breakdown(query);
+  }
+
+  @Get('band-positioning')
+  @Roles('viewer')
+  @ApiContract({
+    summary: 'Where people sit in their bands, per level',
+    query: AnalyticsQuerySchema,
+    success: {
+      status: HttpStatus.OK,
+      schema: BandPositioningSchema,
+      description:
+        'Counts for everyone; points (by employee code) for HR managers and admins',
+    },
+    problems: [HttpStatus.BAD_REQUEST],
+  })
+  bandPositioning(
+    @Query(new ZodValidationPipe(AnalyticsQuerySchema)) query: AnalyticsQuery,
+    @CurrentUser() reader: AuthenticatedUser,
+  ): Promise<BandPositioning> {
+    return this.analytics.bandPositioning(query, reader);
   }
 }
