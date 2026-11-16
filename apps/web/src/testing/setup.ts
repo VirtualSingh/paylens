@@ -3,9 +3,10 @@ import '@testing-library/jest-dom/vitest';
 import { configure } from '@testing-library/react';
 import { server } from './msw';
 
-// `findBy…` waits 1 s by default. A lazy route's first import can take longer while the
-// pre-commit hook runs lint and typecheck on the same CPU, which made one run flaky.
-configure({ asyncUtilTimeout: 3000 });
+// `findBy…` waits 1 s by default. With lint and typecheck on the same CPU (pre-commit hook,
+// CI) a page's first render and fetch took 4–5 s, so waits get 10 s. A missing element still
+// fails; it just takes longer to say so.
+configure({ asyncUtilTimeout: 10_000 });
 
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
 afterEach(() => server.resetHandlers());

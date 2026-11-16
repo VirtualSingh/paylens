@@ -40,6 +40,9 @@ export default defineConfig(() => ({
     environment: 'jsdom',
     include: ['src/**/*.spec.{ts,tsx}'],
     setupFiles: ['./src/testing/setup.ts'],
+    // Page tests take 0.1–0.8 s alone, but over 5 s while lint and typecheck share the CPU
+    // (pre-commit hook, CI): room for that, without hiding a test that really hangs.
+    testTimeout: 15_000,
     reporters: ['default'],
     coverage: {
       reportsDirectory: './test-output/vitest/coverage',

@@ -6,6 +6,12 @@ import { server } from '../testing/msw';
 import { renderRoute } from '../testing/render-route';
 
 describe('App shell', () => {
+  // Opening a lazy route the first time makes Vite transform that page's whole module graph,
+  // which takes seconds while lint and typecheck share the CPU. Pay it once, here.
+  beforeAll(async () => {
+    await import('../features/people/directory-page');
+  }, 30_000);
+
   it('names the product', async () => {
     renderRoute('/');
 

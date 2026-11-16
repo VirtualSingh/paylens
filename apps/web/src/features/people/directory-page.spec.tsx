@@ -5,6 +5,7 @@ import {
   directoryPage,
   guptaListItem,
   MEHTA_ID,
+  mehtaHistory,
   mehtaListItem,
   mehtaProfile,
 } from '../../testing/fixtures';
@@ -24,6 +25,12 @@ function answerDirectory(page = directoryPage()) {
 }
 
 describe('People directory', () => {
+  // Opening a lazy route the first time makes Vite transform that page's whole module graph,
+  // which takes seconds while lint and typecheck share the CPU. Pay it once, here.
+  beforeAll(async () => {
+    await Promise.all([import('./directory-page'), import('./employee-page')]);
+  }, 30_000);
+
   afterEach(() => localStorage.clear());
 
   it('lists people with their local salary, the converted figure and the band', async () => {
@@ -108,10 +115,15 @@ describe('People directory', () => {
       http.get(`/api/v1/employees/${MEHTA_ID}`, () =>
         HttpResponse.json(mehtaProfile),
       ),
+      http.get(`/api/v1/employees/${MEHTA_ID}/salary-history`, () =>
+        HttpResponse.json(mehtaHistory),
+      ),
     );
     const { user, router } = renderRoute('/people');
 
     await user.click(await screen.findByText('Aarav Mehta'));
+    // The profile's code loads lazily; the router moves once it has.
+    await screen.findByRole('heading', { name: 'Aarav Mehta' });
 
     expect(router.state.location.pathname).toBe(`/people/${MEHTA_ID}`);
   });

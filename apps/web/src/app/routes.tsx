@@ -30,6 +30,13 @@ export const routes: RouteObject[] = [
                 .DirectoryPage,
             }),
           },
+          {
+            path: 'people/:id',
+            lazy: async () => ({
+              Component: (await import('../features/people/employee-page'))
+                .EmployeePage,
+            }),
+          },
           { path: 'pay-bands', element: <ComingLater section="Pay bands" /> },
           { path: 'imports', element: <ComingLater section="Imports" /> },
           { path: 'audit', element: <ComingLater section="The audit log" /> },
