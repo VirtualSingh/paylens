@@ -32,14 +32,19 @@ import {
 } from '../../lib/labels';
 import { useCountries } from '../../lib/lookups';
 import { SalaryChangeSheet } from './salary-change-sheet';
+import { StatusSheet } from './status-sheet';
 import {
   useEmployee,
   useEmployeeAudit,
   useSalaryHistory,
 } from './use-employee';
 
-/** The profile's one primary action (ui.md principle 4) and the sheet it opens. */
-function ChangeSalaryAction({
+/**
+ * What an HR manager can do to this person, each opening its sheet. "Change salary" is the
+ * one primary action (ui.md principle 4); the others are quiet. A leaver has none: terminated
+ * is final (ADR-013).
+ */
+function ProfileActions({
   profile,
   etag,
   countryName,
@@ -48,21 +53,33 @@ function ChangeSalaryAction({
   etag: string;
   countryName: string;
 }) {
-  const [open, setOpen] = useState(false);
-  // The sheet needs the current record's start date for its hint; the tab loads it too.
+  const [open, setOpen] = useState<'salary' | 'status' | null>(null);
+  // The salary sheet needs the current record's start date for its hint; the tab loads it too.
   const history = useSalaryHistory(profile.id, true);
+  const sheetProps = (sheet: 'salary' | 'status') => ({
+    open: open === sheet,
+    onOpenChange: (next: boolean) => setOpen(next ? sheet : null),
+  });
+  if (profile.status === 'terminated') {
+    return null;
+  }
   return (
-    <>
-      <Button onClick={() => setOpen(true)}>Change salary</Button>
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={() => setOpen('status')}>
+        Change status
+      </Button>
+      {profile.pay !== null && profile.pay !== undefined && (
+        <Button onClick={() => setOpen('salary')}>Change salary</Button>
+      )}
+      <StatusSheet profile={profile} etag={etag} {...sheetProps('status')} />
       <SalaryChangeSheet
         profile={profile}
         etag={etag}
         history={history.data ?? []}
         countryName={countryName}
-        open={open}
-        onOpenChange={setOpen}
+        {...sheetProps('salary')}
       />
-    </>
+    </div>
   );
 }
 
@@ -94,16 +111,13 @@ export function EmployeePage() {
           <h1 className="text-xl">
             {profile.firstName} {profile.lastName}
           </h1>
-          {canManagePay &&
-            profile.status !== 'terminated' &&
-            profile.pay !== null &&
-            profile.pay !== undefined && (
-              <ChangeSalaryAction
-                profile={profile}
-                etag={etag}
-                countryName={countryName}
-              />
-            )}
+          {canManagePay && (
+            <ProfileActions
+              profile={profile}
+              etag={etag}
+              countryName={countryName}
+            />
+          )}
         </div>
         <p>
           {[
