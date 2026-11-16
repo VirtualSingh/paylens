@@ -1,4 +1,7 @@
-import { AnalyticsQuerySchema } from './analytics.schema.js';
+import {
+  AnalyticsBreakdownQuerySchema,
+  AnalyticsQuerySchema,
+} from './analytics.schema.js';
 
 describe('AnalyticsQuerySchema', () => {
   it('reports in USD as of today unless asked otherwise', () => {
@@ -21,5 +24,16 @@ describe('AnalyticsQuerySchema', () => {
     ['a date that is not YYYY-MM-DD', { asOf: '31/12/2025' }],
   ])('rejects %s', (_case, query) => {
     expect(AnalyticsQuerySchema.safeParse(query).success).toBe(false);
+  });
+});
+
+describe('AnalyticsBreakdownQuerySchema', () => {
+  it('groups only by country, department or level', () => {
+    expect(
+      AnalyticsBreakdownQuerySchema.safeParse({ by: 'country' }).success,
+    ).toBe(true);
+    expect(
+      AnalyticsBreakdownQuerySchema.safeParse({ by: 'gender' }).success,
+    ).toBe(false);
   });
 });

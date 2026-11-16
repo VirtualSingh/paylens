@@ -33,3 +33,38 @@ export const AnalyticsSummarySchema = z.object({
   unconvertedCount: z.number().int(),
 });
 export type AnalyticsSummary = z.infer<typeof AnalyticsSummarySchema>;
+
+/** What a breakdown can be grouped by (an allowlist: nothing else reaches the query). */
+export const BREAKDOWN_DIMENSIONS = ['country', 'department', 'level'] as const;
+export type BreakdownDimension = (typeof BREAKDOWN_DIMENSIONS)[number];
+
+/** `GET /analytics/breakdown?by=country` — "how does payroll split by …?" */
+export const AnalyticsBreakdownQuerySchema = AnalyticsQuerySchema.extend({
+  by: z.enum(BREAKDOWN_DIMENSIONS),
+});
+export type AnalyticsBreakdownQuery = z.infer<
+  typeof AnalyticsBreakdownQuerySchema
+>;
+
+/** One group: its people, payroll and spread (p25 close to p75 means compression). */
+export const BreakdownRowSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  headcount: z.number().int(),
+  annualPayroll: MoneyJsonSchema,
+  p25: MoneyJsonSchema.nullable(),
+  median: MoneyJsonSchema.nullable(),
+  p75: MoneyJsonSchema.nullable(),
+  withinBandShare: z.number().nullable(),
+  unconvertedCount: z.number().int(),
+});
+export type BreakdownRow = z.infer<typeof BreakdownRowSchema>;
+
+/** Groups by payroll, largest first; levels in ladder order instead. */
+export const AnalyticsBreakdownSchema = z.object({
+  asOf: z.iso.date(),
+  reportingCurrency: z.string(),
+  by: z.enum(BREAKDOWN_DIMENSIONS),
+  rows: z.array(BreakdownRowSchema),
+});
+export type AnalyticsBreakdown = z.infer<typeof AnalyticsBreakdownSchema>;
