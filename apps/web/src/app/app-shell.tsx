@@ -1,19 +1,11 @@
 import { USER_ROLES, type UserRole } from '@paylens/shared';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useCurrentRole } from '../lib/current-role';
 import { reportingCurrencies, useCountries } from '../lib/lookups';
 import { useReportingCurrency } from '../lib/reporting-currency';
-
-/** Main sections, in the order of docs/vault/design/ui-screens.md → "App shell". */
-const SECTIONS = [
-  { label: 'Dashboard', path: '/' },
-  { label: 'People', path: '/people' },
-  { label: 'Pay bands', path: '/pay-bands' },
-  { label: 'Imports', path: '/imports' },
-  { label: 'Audit log', path: '/audit' },
-  { label: 'Settings', path: '/settings' },
-] as const;
+import { CommandPalette } from './command-palette';
+import { SECTIONS } from './sections';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   viewer: 'Viewer',
@@ -54,6 +46,7 @@ export function AppShell() {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
+        <CommandPalette />
         <main className="flex-1 p-6">
           <Outlet />
         </main>
@@ -74,10 +67,27 @@ function TopBar() {
   );
 }
 
-/** Typing a name and pressing Enter opens the directory filtered by it. */
+/** Typing a name and pressing Enter opens the directory filtered by it; "/" focuses it. */
 function PeopleSearch() {
   const navigate = useNavigate();
   const [text, setText] = useState('');
+  const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function focusOnSlash(event: KeyboardEvent) {
+      const target = event.target;
+      const typing =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+      if (event.key === '/' && !typing) {
+        event.preventDefault();
+        input.current?.focus();
+      }
+    }
+    window.addEventListener('keydown', focusOnSlash);
+    return () => window.removeEventListener('keydown', focusOnSlash);
+  }, []);
 
   function search(event: FormEvent) {
     event.preventDefault();
@@ -90,7 +100,8 @@ function PeopleSearch() {
       <input
         type="search"
         aria-label="Search people"
-        placeholder="Search people by name, code or email"
+        ref={input}
+        placeholder="Search people, or press ⌘K"
         value={text}
         onChange={(event) => setText(event.target.value)}
         className="h-8 w-full rounded-md border border-line bg-surface px-3"

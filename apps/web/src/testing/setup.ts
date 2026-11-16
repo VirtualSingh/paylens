@@ -11,3 +11,19 @@ configure({ asyncUtilTimeout: 10_000 });
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
+
+// cmdk (the ⌘K palette) measures and scrolls its list; jsdom has neither API.
+globalThis.ResizeObserver ??= class {
+  observe(): void {
+    // jsdom has no layout, so there is nothing to observe.
+  }
+  unobserve(): void {
+    // As above.
+  }
+  disconnect(): void {
+    // As above.
+  }
+};
+Element.prototype.scrollIntoView ??= function scrollIntoView(): void {
+  // jsdom does not scroll; cmdk only calls this to keep the active item in view.
+};
