@@ -79,17 +79,61 @@ describe('People directory', () => {
     );
   });
 
-  it('filters from the filter bar and goes back to the first page', async () => {
+  it('filters by several values at once and goes back to the first page', async () => {
     answerDirectory();
     const { user, router } = renderRoute('/people?page=3');
     await screen.findByText('Aarav Mehta');
 
-    await user.selectOptions(
-      await screen.findByRole('combobox', { name: 'Department' }),
-      'ENG',
+    await user.click(screen.getByRole('button', { name: 'Filter by Country' }));
+    await user.click(await screen.findByRole('checkbox', { name: 'India' }));
+    await user.click(screen.getByRole('checkbox', { name: 'United Kingdom' }));
+
+    expect(router.state.location.search).toBe('?country=IN&country=GB');
+  });
+
+  it('shows each active filter as a chip that removes it', async () => {
+    answerDirectory();
+    const { user, router } = renderRoute('/people?country=IN&department=ENG');
+    await screen.findByText('Aarav Mehta');
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Remove Country: India' }),
     );
 
+    expect(
+      screen.getByRole('button', { name: 'Remove Department: Engineering' }),
+    ).toBeInTheDocument();
     expect(router.state.location.search).toBe('?department=ENG');
+  });
+
+  it('hides a column from the column chooser and remembers it', async () => {
+    answerDirectory();
+    const { user } = renderRoute('/people');
+    await screen.findByText('Aarav Mehta');
+
+    await user.click(screen.getByRole('button', { name: 'Columns' }));
+    await user.click(await screen.findByRole('checkbox', { name: 'Code' }));
+
+    expect(
+      screen.queryByRole('columnheader', { name: 'Code' }),
+    ).not.toBeInTheDocument();
+    expect(localStorage.getItem('paylens.directory.hidden')).toBe('["code"]');
+  });
+
+  it('switches between compact and comfortable rows', async () => {
+    answerDirectory();
+    const { user } = renderRoute('/people');
+    await screen.findByText('Aarav Mehta');
+
+    await user.click(screen.getByRole('button', { name: 'Comfortable rows' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Comfortable rows' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('table', { name: 'People' })).toHaveAttribute(
+      'data-density',
+      'comfortable',
+    );
   });
 
   it('shows viewers the directory without anyone’s pay', async () => {

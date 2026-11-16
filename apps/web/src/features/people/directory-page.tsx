@@ -10,8 +10,19 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { BandBar } from '../../components/band-bar';
 import { DataTable } from '../../components/data-table';
 import { formatMoney, MoneyText } from '../../components/money';
+import {
+  type FilterOption,
+  MultiSelectFilter,
+} from '../../components/multi-select-filter';
 import { EmptyState, ErrorState } from '../../components/page-states';
 import { Button } from '../../components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../../components/ui/popover';
+import { STATUS_LABELS } from '../../lib/labels';
+import { usePreference } from '../../lib/preferences';
 import { useCanManagePay } from '../../lib/session';
 import { useCountries, useDepartments, useJobLevels } from '../../lib/lookups';
 import { useReportingCurrency } from '../../lib/reporting-currency';
@@ -24,17 +35,15 @@ import {
 import { AddEmployeeSheet } from './add-employee-sheet';
 import { useDirectory } from './use-directory';
 
-const STATUS_LABELS: Record<(typeof EMPLOYEE_STATUSES)[number], string> = {
-  active: 'Active',
-  on_leave: 'On leave',
-  terminated: 'Terminated',
-};
 const BAND_LABELS: Record<(typeof BAND_POSITIONS)[number], string> = {
   below: 'Below band',
   within: 'Within band',
   above: 'Above band',
 };
 const PAGE_SIZES = [25, 50, 100] as const;
+
+type Density = 'compact' | 'comfortable';
+const DENSITIES: readonly Density[] = ['compact', 'comfortable'];
 
 /** The people directory (ui-screens.md §4): server-side search, filters, sort and paging. */
 export function DirectoryPage() {
@@ -45,6 +54,19 @@ export function DirectoryPage() {
   const columns = useDirectoryColumns();
   const canManagePay = useCanManagePay();
   const [adding, setAdding] = useState(false);
+  const [hidden, setHidden] = usePreference<string[]>(
+    'paylens.directory.hidden',
+    [],
+    (stored) =>
+      Array.isArray(stored)
+        ? stored.filter((id): id is string => typeof id === 'string')
+        : undefined,
+  );
+  const [density, setDensity] = usePreference<Density>(
+    'paylens.directory.density',
+    'compact',
+    (stored) => DENSITIES.find((option) => option === stored),
+  );
 
   /** Changes some parameters; any change but paging itself starts again at page 1. */
   function update(changes: Record<string, string | undefined>) {
@@ -60,6 +82,23 @@ export function DirectoryPage() {
       if (!('page' in changes)) {
         next.delete('page');
       }
+      return next;
+    });
+  }
+
+  /** Adds or removes one value of a multi-value filter, and starts again at page 1. */
+  function toggle(key: FilterKey, value: string) {
+    setSearch((current) => {
+      const next = new URLSearchParams(current);
+      const values = next.getAll(key);
+      next.delete(key);
+      const kept = values.includes(value)
+        ? values.filter((v) => v !== value)
+        : [...values, value];
+      for (const item of kept) {
+        next.append(key, item);
+      }
+      next.delete('page');
       return next;
     });
   }
@@ -94,11 +133,25 @@ export function DirectoryPage() {
 
       <FilterBar
         search={search}
-        onChange={(key, value) => update({ [key]: value })}
+        onSearch={(text) => update({ q: text })}
+        onToggle={toggle}
         onClear={() =>
           update(Object.fromEntries(FILTER_KEYS.map((key) => [key, undefined])))
         }
         hasFilters={hasFilters}
+      />
+
+      <TableTools
+        columns={columns
+          .filter((column) => column.id !== 'name')
+          .map((column) => ({
+            id: column.id ?? '',
+            label: typeof column.header === 'string' ? column.header : '',
+          }))}
+        hidden={hidden}
+        onHiddenChange={setHidden}
+        density={density}
+        onDensityChange={setDensity}
       />
 
       {directory.isError ? (
@@ -140,6 +193,8 @@ export function DirectoryPage() {
             }}
             onOpenRow={(row) => navigate(`/people/${row.id}`)}
             getRowId={(row) => row.id}
+            hiddenColumns={hidden}
+            density={density}
           />
         </div>
       )}
@@ -271,20 +326,73 @@ function useDirectoryColumns(): ColumnDef<EmployeeListItem>[] {
   }, [canManagePay, currency]);
 }
 
+interface FilterDefinition {
+  readonly key: Exclude<FilterKey, 'q'>;
+  readonly label: string;
+  readonly options: readonly FilterOption[];
+}
+
+/** The directory's filters and their choices; the popovers and the chips share them. */
+function useFilterDefinitions(): FilterDefinition[] {
+  const countries = useCountries();
+  const departments = useDepartments();
+  const levels = useJobLevels();
+  return [
+    {
+      key: 'country',
+      label: 'Country',
+      options: (countries.data ?? []).map((c) => ({
+        value: c.code,
+        label: c.name,
+      })),
+    },
+    {
+      key: 'department',
+      label: 'Department',
+      options: (departments.data ?? []).map((d) => ({
+        value: d.code,
+        label: d.name,
+      })),
+    },
+    {
+      key: 'level',
+      label: 'Level',
+      options: (levels.data ?? []).map((l) => ({
+        value: l.code,
+        label: l.code,
+      })),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      options: EMPLOYEE_STATUSES.map((s) => ({
+        value: s,
+        label: STATUS_LABELS[s],
+      })),
+    },
+    {
+      key: 'band',
+      label: 'Band',
+      options: BAND_POSITIONS.map((b) => ({ value: b, label: BAND_LABELS[b] })),
+    },
+  ];
+}
+
+/** Search, the multi-select filters, and a chip per chosen value (ui.md → FilterBar). */
 function FilterBar({
   search,
-  onChange,
+  onSearch,
+  onToggle,
   onClear,
   hasFilters,
 }: {
   search: URLSearchParams;
-  onChange: (key: FilterKey, value: string | undefined) => void;
+  onSearch: (text: string) => void;
+  onToggle: (key: FilterKey, value: string) => void;
   onClear: () => void;
   hasFilters: boolean;
 }) {
-  const countries = useCountries();
-  const departments = useDepartments();
-  const levels = useJobLevels();
+  const definitions = useFilterDefinitions();
   const [text, setText] = useState(search.get('q') ?? '');
 
   // Typing waits 300 ms before searching, so the API is asked once per pause, not per key.
@@ -293,77 +401,133 @@ function FilterBar({
     if (text.trim() === urlText) {
       return undefined;
     }
-    const timer = setTimeout(() => onChange('q', text.trim()), 300);
+    const timer = setTimeout(() => onSearch(text.trim()), 300);
     return () => clearTimeout(timer);
-  }, [text, urlText, onChange]);
+  }, [text, urlText, onSearch]);
   useEffect(() => setText(urlText), [urlText]);
 
-  const filter = (
-    key: FilterKey,
-    label: string,
-    options: readonly { value: string; label: string }[],
-  ) => (
-    <label className="flex items-center gap-2 text-sm text-muted-foreground">
-      {label}
-      <select
-        className="h-8 rounded-md border border-line bg-surface px-2 text-base text-ink"
-        value={search.get(key) ?? ''}
-        onChange={(event) => onChange(key, event.target.value)}
-      >
-        <option value="">All</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+  const chips = definitions.flatMap((definition) =>
+    search.getAll(definition.key).map((value) => ({
+      key: definition.key,
+      value,
+      text: `${definition.label}: ${
+        definition.options.find((option) => option.value === value)?.label ??
+        value
+      }`,
+    })),
   );
 
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      <input
-        type="search"
-        aria-label="Search by name, code or email"
-        placeholder="Search by name, code or email"
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        className="h-8 w-72 rounded-md border border-line bg-surface px-3"
-      />
-      {filter(
-        'country',
-        'Country',
-        (countries.data ?? []).map((c) => ({ value: c.code, label: c.name })),
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          aria-label="Search by name, code or email"
+          placeholder="Search by name, code or email"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          className="mr-2 h-8 w-72 rounded-md border border-line bg-surface px-3"
+        />
+        {definitions.map((definition) => (
+          <MultiSelectFilter
+            key={definition.key}
+            label={definition.label}
+            options={definition.options}
+            selected={search.getAll(definition.key)}
+            onToggle={(value) => onToggle(definition.key, value)}
+          />
+        ))}
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="ml-2 text-sm text-teal underline-offset-4 hover:underline"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+      {chips.length > 0 && (
+        <ul aria-label="Active filters" className="flex flex-wrap gap-2">
+          {chips.map((chip) => (
+            <li key={`${chip.key}=${chip.value}`}>
+              <button
+                type="button"
+                aria-label={`Remove ${chip.text}`}
+                onClick={() => onToggle(chip.key, chip.value)}
+                className="flex h-7 items-center gap-1 rounded-full bg-teal-soft px-3 text-sm hover:bg-teal-soft/70"
+              >
+                {chip.text}
+                <span aria-hidden="true">×</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
-      {filter(
-        'department',
-        'Department',
-        (departments.data ?? []).map((d) => ({ value: d.code, label: d.name })),
-      )}
-      {filter(
-        'level',
-        'Level',
-        (levels.data ?? []).map((l) => ({ value: l.code, label: l.code })),
-      )}
-      {filter(
-        'status',
-        'Status',
-        EMPLOYEE_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] })),
-      )}
-      {filter(
-        'band',
-        'Band',
-        BAND_POSITIONS.map((b) => ({ value: b, label: BAND_LABELS[b] })),
-      )}
-      {hasFilters && (
-        <button
-          type="button"
-          onClick={onClear}
-          className="text-sm text-teal underline-offset-4 hover:underline"
-        >
-          Clear filters
-        </button>
-      )}
+    </div>
+  );
+}
+
+/** Columns and density: display choices kept in this browser (ui.md → DataTable). */
+function TableTools({
+  columns,
+  hidden,
+  onHiddenChange,
+  density,
+  onDensityChange,
+}: {
+  columns: readonly { id: string; label: string }[];
+  hidden: readonly string[];
+  onHiddenChange: (hidden: string[]) => void;
+  density: Density;
+  onDensityChange: (density: Density) => void;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm">
+            Columns <span aria-hidden="true">▾</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-52 p-2">
+          <fieldset className="flex flex-col gap-0.5">
+            <legend className="sr-only">Columns shown</legend>
+            {columns.map((column) => (
+              <label
+                key={column.id}
+                className="flex h-8 items-center gap-2 rounded-md px-2 hover:bg-teal-soft"
+              >
+                <input
+                  type="checkbox"
+                  checked={!hidden.includes(column.id)}
+                  onChange={() =>
+                    onHiddenChange(
+                      hidden.includes(column.id)
+                        ? hidden.filter((id) => id !== column.id)
+                        : [...hidden, column.id],
+                    )
+                  }
+                />
+                {column.label}
+              </label>
+            ))}
+          </fieldset>
+        </PopoverContent>
+      </Popover>
+      <div role="group" aria-label="Row density" className="flex">
+        {DENSITIES.map((option) => (
+          <Button
+            key={option}
+            variant={density === option ? 'secondary' : 'outline'}
+            size="sm"
+            aria-pressed={density === option}
+            onClick={() => onDensityChange(option)}
+          >
+            {option === 'compact' ? 'Compact rows' : 'Comfortable rows'}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

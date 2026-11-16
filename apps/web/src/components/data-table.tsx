@@ -35,6 +35,8 @@ export function DataTable<Row>({
   onOpenRow,
   getRowId,
   busy = false,
+  hiddenColumns = [],
+  density = 'compact',
 }: {
   caption: string;
   columns: ColumnDef<Row>[];
@@ -44,6 +46,10 @@ export function DataTable<Row>({
   onOpenRow: (row: Row) => void;
   getRowId: (row: Row) => string;
   busy?: boolean;
+  /** Column ids the reader chose to hide (column chooser). */
+  hiddenColumns?: readonly string[];
+  /** 36 px rows (compact) or 40 px (comfortable), ui.md → density. */
+  density?: 'compact' | 'comfortable';
 }) {
   const table = useReactTable({
     data,
@@ -52,12 +58,18 @@ export function DataTable<Row>({
     getCoreRowModel: getCoreRowModel(),
     manualSorting: true,
     manualPagination: true,
+    state: {
+      columnVisibility: Object.fromEntries(
+        hiddenColumns.map((id) => [id, false]),
+      ),
+    },
   });
 
   return (
     <table
       className="w-full border-collapse bg-surface text-base"
       aria-busy={busy}
+      data-density={density}
     >
       <caption className="sr-only">{caption}</caption>
       <thead className="sticky top-0 z-10 bg-surface">
@@ -111,7 +123,7 @@ export function DataTable<Row>({
           <tr
             key={row.id}
             onClick={() => onOpenRow(row.original)}
-            className="h-9 cursor-pointer border-b border-line hover:bg-teal-soft/50"
+            className={`${density === 'compact' ? 'h-9' : 'h-10'} cursor-pointer border-b border-line hover:bg-teal-soft/50`}
           >
             {row.getVisibleCells().map((cell) => (
               <td
