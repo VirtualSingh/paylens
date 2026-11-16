@@ -23,7 +23,9 @@ export function renderRoute(path: string): RenderedRoute {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  const user = userEvent.setup();
+  // Every keystroke is still a full key event; `delay: null` only skips the timer between
+  // them, which made typing-heavy tests slow under load.
+  const user = userEvent.setup({ delay: null });
   const view = render(
     <AppProviders queryClient={queryClient}>
       <RouterProvider router={router} />

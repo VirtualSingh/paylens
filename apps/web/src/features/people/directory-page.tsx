@@ -11,6 +11,7 @@ import { BandBar } from '../../components/band-bar';
 import { DataTable } from '../../components/data-table';
 import { formatMoney, MoneyText } from '../../components/money';
 import { EmptyState, ErrorState } from '../../components/page-states';
+import { Button } from '../../components/ui/button';
 import { useCanManagePay } from '../../lib/current-role';
 import { useCountries, useDepartments, useJobLevels } from '../../lib/lookups';
 import { useReportingCurrency } from '../../lib/reporting-currency';
@@ -20,6 +21,7 @@ import {
   nextSort,
   readDirectoryQuery,
 } from './directory-params';
+import { AddEmployeeSheet } from './add-employee-sheet';
 import { useDirectory } from './use-directory';
 
 const STATUS_LABELS: Record<(typeof EMPLOYEE_STATUSES)[number], string> = {
@@ -41,6 +43,8 @@ export function DirectoryPage() {
   const directory = useDirectory(query);
   const navigate = useNavigate();
   const columns = useDirectoryColumns();
+  const canManagePay = useCanManagePay();
+  const [adding, setAdding] = useState(false);
 
   /** Changes some parameters; any change but paging itself starts again at page 1. */
   function update(changes: Record<string, string | undefined>) {
@@ -67,15 +71,25 @@ export function DirectoryPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header>
-        <h1 className="text-xl">People</h1>
-        <p className="mt-1 text-muted-foreground" aria-live="polite">
-          {page === undefined
-            ? 'Loading people…'
-            : page.total === 0
-              ? 'No matches'
-              : `Showing ${first.toLocaleString('en-US')}–${last.toLocaleString('en-US')} of ${page.total.toLocaleString('en-US')}`}
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl">People</h1>
+          <p className="mt-1 text-muted-foreground" aria-live="polite">
+            {page === undefined
+              ? 'Loading people…'
+              : page.total === 0
+                ? 'No matches'
+                : `Showing ${first.toLocaleString('en-US')}–${last.toLocaleString('en-US')} of ${page.total.toLocaleString('en-US')}`}
+          </p>
+        </div>
+        {canManagePay && (
+          <>
+            <Button onClick={() => setAdding(true)}>
+              <span aria-hidden="true">+</span> Add employee
+            </Button>
+            <AddEmployeeSheet open={adding} onOpenChange={setAdding} />
+          </>
+        )}
       </header>
 
       <FilterBar

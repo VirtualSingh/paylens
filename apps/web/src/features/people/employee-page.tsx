@@ -31,6 +31,7 @@ import {
   STATUS_LABELS,
 } from '../../lib/labels';
 import { useCountries } from '../../lib/lookups';
+import { EditDetailsSheet } from './edit-details-sheet';
 import { SalaryChangeSheet } from './salary-change-sheet';
 import { StatusSheet } from './status-sheet';
 import {
@@ -41,8 +42,7 @@ import {
 
 /**
  * What an HR manager can do to this person, each opening its sheet. "Change salary" is the
- * one primary action (ui.md principle 4); the others are quiet. A leaver has none: terminated
- * is final (ADR-013).
+ * one primary action (ui.md principle 4); the others are quiet.
  */
 function ProfileActions({
   profile,
@@ -53,24 +53,35 @@ function ProfileActions({
   etag: string;
   countryName: string;
 }) {
-  const [open, setOpen] = useState<'salary' | 'status' | null>(null);
+  const [open, setOpen] = useState<'salary' | 'status' | 'details' | null>(
+    null,
+  );
   // The salary sheet needs the current record's start date for its hint; the tab loads it too.
   const history = useSalaryHistory(profile.id, true);
-  const sheetProps = (sheet: 'salary' | 'status') => ({
+  const sheetProps = (sheet: 'salary' | 'status' | 'details') => ({
     open: open === sheet,
     onOpenChange: (next: boolean) => setOpen(next ? sheet : null),
   });
-  if (profile.status === 'terminated') {
-    return null;
-  }
+  // A leaver's details can still be corrected; their status and pay are final (ADR-013).
+  const current = profile.status !== 'terminated';
   return (
     <div className="flex gap-2">
-      <Button variant="outline" onClick={() => setOpen('status')}>
-        Change status
+      <Button variant="outline" onClick={() => setOpen('details')}>
+        Edit details
       </Button>
-      {profile.pay !== null && profile.pay !== undefined && (
+      {current && (
+        <Button variant="outline" onClick={() => setOpen('status')}>
+          Change status
+        </Button>
+      )}
+      {current && profile.pay !== null && profile.pay !== undefined && (
         <Button onClick={() => setOpen('salary')}>Change salary</Button>
       )}
+      <EditDetailsSheet
+        profile={profile}
+        etag={etag}
+        {...sheetProps('details')}
+      />
       <StatusSheet profile={profile} etag={etag} {...sheetProps('status')} />
       <SalaryChangeSheet
         profile={profile}

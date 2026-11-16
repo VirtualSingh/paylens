@@ -109,7 +109,8 @@ describe('Employee profile', () => {
 
     await user.click(await screen.findByRole('tab', { name: 'Audit' }));
 
-    const timeline = screen.getByRole('list', { name: 'Audit events' });
+    // The audit loads when its tab opens.
+    const timeline = await screen.findByRole('list', { name: 'Audit events' });
     expect(within(timeline).getByText('Details edited')).toBeInTheDocument();
     expect(
       within(timeline).getByText(

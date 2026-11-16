@@ -131,14 +131,19 @@ describe('People directory', () => {
   it('says when nobody matches and offers to clear the filters', async () => {
     answerDirectory(directoryPage([]));
     const { user, router } = renderRoute('/people?country=GB');
+    const empty = await screen.findByRole('heading', {
+      name: 'No one matches these filters',
+    });
 
+    // The empty state's own action (the filter bar has a "Clear filters" too).
+    const section = empty.closest('section');
+    expect(section).not.toBeNull();
     await user.click(
-      await screen.findByRole('button', { name: 'Clear filters' }),
+      within(section as HTMLElement).getByRole('button', {
+        name: 'Clear filters',
+      }),
     );
 
-    expect(
-      screen.getByRole('heading', { name: 'No one matches these filters' }),
-    ).toBeInTheDocument();
     expect(router.state.location.search).toBe('');
   });
 
