@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AnalyticsModule } from './analytics/analytics.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ClockModule } from './common/clock.js';
@@ -24,6 +25,7 @@ import { SalariesModule } from './salaries/salaries.module.js';
     ReferenceModule,
     PayBandsModule,
     FxModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

@@ -61,6 +61,12 @@ const ROUTES: readonly RouteCase[] = [
     mutates: false,
   },
   {
+    route: 'GET /api/v1/analytics/summary',
+    minimum: 'viewer',
+    success: 200,
+    mutates: false,
+  },
+  {
     route: 'GET /api/v1/health',
     minimum: 'public',
     success: 200,
