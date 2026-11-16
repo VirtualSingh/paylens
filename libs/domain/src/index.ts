@@ -12,3 +12,4 @@ export * from './lib/employees/employee-code.js';
 export * from './lib/employees/reporting-line.js';
 export * from './lib/employees/status-change.js';
 export * from './lib/money/parse-amount.js';
+export * from './lib/statistics/percentile.js';
