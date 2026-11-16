@@ -103,8 +103,9 @@ describe('OpenAPI docs at /api/docs', () => {
               const statuses = Object.entries(operation.responses);
               const success = statuses.some(
                 ([status, response]) =>
-                  status.startsWith('2') &&
-                  response.content?.['application/json'] !== undefined,
+                  status === '204' ||
+                  (status.startsWith('2') &&
+                    response.content?.['application/json'] !== undefined),
               );
               const problems = statuses.every(
                 ([status, response]) =>

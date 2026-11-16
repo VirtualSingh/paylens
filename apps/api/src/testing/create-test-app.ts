@@ -4,6 +4,17 @@ import { Test } from '@nestjs/testing';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { AppModule } from '../app.module.js';
 import { AUTH_SETTINGS, type AuthSettings } from '../auth/auth-settings.js';
+import {
+  type GoogleIdentity,
+  GoogleTokenVerifier,
+} from '../auth/google-token-verifier.js';
+
+/** By default tests have no Google at all: every token is refused, nothing goes out. */
+const NO_GOOGLE = new (class extends GoogleTokenVerifier {
+  verify(): Promise<GoogleIdentity> {
+    return Promise.reject(new Error('No Google in tests'));
+  }
+})();
 import { Clock, FixedClock } from '../common/clock.js';
 import { configureApp } from '../configure-app.js';
 import { type Database, DATABASE } from '../db/database.js';
@@ -22,6 +33,8 @@ export interface TestAppOptions {
   readonly today?: IsoDate;
   /** The sign-in mode; defaults to off (acting roles), whatever the environment says. */
   readonly auth?: AuthSettings;
+  /** Stands in for Google, so no test calls the network. */
+  readonly googleVerifier?: GoogleTokenVerifier;
 }
 
 /** The real AppModule with the production configuration, ready for supertest. */
@@ -38,6 +51,8 @@ export async function createTestApp(
     .useValue(new FixedClock(options.today ?? '2026-11-14'))
     .overrideProvider(AUTH_SETTINGS)
     .useValue(options.auth ?? { authEnabled: false, googleClientId: null })
+    .overrideProvider(GoogleTokenVerifier)
+    .useValue(options.googleVerifier ?? NO_GOOGLE)
     .compile();
   const app = configureApp(moduleRef.createNestApplication(), {
     docs: options.docs ?? false,

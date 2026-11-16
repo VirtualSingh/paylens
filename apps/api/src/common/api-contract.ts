@@ -25,7 +25,8 @@ export interface ApiContractOptions {
   readonly body?: z.ZodType;
   readonly success: {
     readonly status: HttpStatus;
-    readonly schema: z.ZodType;
+    /** Leave out for an answer with no body (204). */
+    readonly schema?: z.ZodType;
     readonly description: string;
   };
   /** Errors this route can answer, besides 401 and 403 (every non-public route). */
@@ -88,9 +89,11 @@ export function ApiContract(options: ApiContractOptions): MethodDecorator {
     ApiResponse({
       status: success.status,
       description: success.description,
-      content: {
-        'application/json': { schema: toSchema(success.schema, 'output') },
-      },
+      ...(success.schema !== undefined && {
+        content: {
+          'application/json': { schema: toSchema(success.schema, 'output') },
+        },
+      }),
       ...(options.etag === true && {
         headers: {
           ETag: {

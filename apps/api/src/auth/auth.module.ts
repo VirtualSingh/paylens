@@ -12,6 +12,12 @@ import {
 import { UserResolver } from './authenticated-user.js';
 import { SessionResolver } from './session.resolver.js';
 import { UsersRepository } from './users.repository.js';
+import { GoogleSignInService } from './google-sign-in.service.js';
+import {
+  GoogleAuthLibraryVerifier,
+  GoogleTokenVerifier,
+} from './google-token-verifier.js';
+import { SessionsRepository } from './sessions.repository.js';
 
 @Module({
   controllers: [AuthController],
@@ -30,6 +36,14 @@ import { UsersRepository } from './users.repository.js';
           : new ActingRoleResolver(),
     },
     UsersRepository,
+    SessionsRepository,
+    GoogleSignInService,
+    {
+      provide: GoogleTokenVerifier,
+      inject: [AUTH_SETTINGS],
+      useFactory: (settings: AuthSettings) =>
+        new GoogleAuthLibraryVerifier(settings.googleClientId ?? ''),
+    },
     // Every route passes through the guard; there is no opting out by forgetting.
     { provide: APP_GUARD, useClass: AccessGuard },
   ],

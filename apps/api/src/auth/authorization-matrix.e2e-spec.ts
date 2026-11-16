@@ -290,6 +290,14 @@ describe('authorization matrix', () => {
         ),
     );
 
-    expect(served.sort()).toEqual(ROUTES.map(({ route }) => route).sort());
+    // Signing in and out are public by nature and have their own spec (google-sign-in).
+    const signInItself = [
+      'POST /api/v1/auth/google',
+      'POST /api/v1/auth/logout',
+    ];
+
+    expect(
+      served.filter((route) => !signInItself.includes(route)).sort(),
+    ).toEqual(ROUTES.map(({ route }) => route).sort());
   });
 });
