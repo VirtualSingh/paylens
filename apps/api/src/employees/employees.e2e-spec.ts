@@ -27,7 +27,7 @@ describe('GET /api/v1/employees', () => {
 
   const directory = (query: string, role?: string) => {
     const call = request(app.getHttpServer()).get(`/api/v1/employees${query}`);
-    return role === undefined ? call : call.set('x-dev-role', role);
+    return role === undefined ? call : call.set('x-acting-role', role);
   };
 
   it('lists people with their pay for an HR manager, in the shared contract', async () => {
@@ -79,9 +79,5 @@ describe('GET /api/v1/employees', () => {
     expect(response.body.errors).toEqual([
       { path: 'sort.0.field', message: expect.any(String) },
     ]);
-  });
-
-  it('answers 401 when nobody is signed in', async () => {
-    expect((await directory('')).status).toBe(401);
   });
 });

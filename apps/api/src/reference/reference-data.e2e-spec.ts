@@ -28,7 +28,7 @@ describe('reference data', () => {
   const get = (path: string) =>
     request(app.getHttpServer())
       .get(`/api/v1${path}`)
-      .set('x-dev-role', 'viewer');
+      .set('x-acting-role', 'viewer');
 
   const money = (amountMinor: number, currency: string) => ({
     amountMinor: String(amountMinor),
@@ -79,10 +79,6 @@ describe('reference data', () => {
         { code: 'IC4', track: 'ic', rank: 4 },
         { code: 'M1', track: 'manager', rank: 4 },
       ]);
-    });
-
-    it('answers 401 to someone who is not signed in', async () => {
-      await request(app.getHttpServer()).get('/api/v1/countries').expect(401);
     });
   });
 

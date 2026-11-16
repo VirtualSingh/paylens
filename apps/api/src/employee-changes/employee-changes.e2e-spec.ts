@@ -49,7 +49,7 @@ describe('employee changes', () => {
   const create = (body: object, role = 'hr_manager') =>
     request(app.getHttpServer())
       .post('/api/v1/employees')
-      .set('x-dev-role', role)
+      .set('x-acting-role', role)
       .set('x-request-id', 'req-create-1')
       .send(body);
 
@@ -104,7 +104,7 @@ describe('employee changes', () => {
 
       const history = await request(app.getHttpServer())
         .get(`/api/v1/employees/${id}/salary-history`)
-        .set('x-dev-role', 'hr_manager')
+        .set('x-acting-role', 'hr_manager')
         .expect(200);
       const audit = await pglite.query(
         'select action, request_id from audit_events where entity_id = $1',
@@ -201,7 +201,7 @@ describe('employee changes', () => {
     const edit = (id: string, body: object, ifMatch: string | null = '"1"') => {
       const call = request(app.getHttpServer())
         .patch(`/api/v1/employees/${id}`)
-        .set('x-dev-role', 'hr_manager')
+        .set('x-acting-role', 'hr_manager')
         .set('x-request-id', 'req-edit-1')
         .send(body);
       return ifMatch === null ? call : call.set('If-Match', ifMatch);
@@ -311,7 +311,7 @@ describe('employee changes', () => {
     it('answers 404 for someone who does not exist', async () => {
       await request(app.getHttpServer())
         .patch('/api/v1/employees/00000000-0000-4000-8000-000000000000')
-        .set('x-dev-role', 'hr_manager')
+        .set('x-acting-role', 'hr_manager')
         .set('If-Match', '"1"')
         .send({ jobTitle: 'Ghost' })
         .expect(404);
@@ -332,7 +332,7 @@ describe('employee changes', () => {
     const changeStatus = (id: string, body: object, ifMatch = '"1"') =>
       request(app.getHttpServer())
         .post(`/api/v1/employees/${id}/status`)
-        .set('x-dev-role', 'hr_manager')
+        .set('x-acting-role', 'hr_manager')
         .set('x-request-id', 'req-status-1')
         .set('If-Match', ifMatch)
         .send(body);
@@ -346,7 +346,7 @@ describe('employee changes', () => {
       }).expect(200);
       const history = await request(app.getHttpServer())
         .get(`/api/v1/employees/${id}/salary-history`)
-        .set('x-dev-role', 'hr_manager')
+        .set('x-acting-role', 'hr_manager')
         .expect(200);
 
       expect(response.headers.etag).toBe('"2"');
@@ -429,7 +429,7 @@ describe('employee changes', () => {
     it('is for HR managers: viewers get 403', async () => {
       await request(app.getHttpServer())
         .post(`/api/v1/employees/${await idOf('ACME-000001')}/status`)
-        .set('x-dev-role', 'viewer')
+        .set('x-acting-role', 'viewer')
         .set('If-Match', '"1"')
         .send({ status: 'on_leave', effectiveDate: '2026-12-01' })
         .expect(403);

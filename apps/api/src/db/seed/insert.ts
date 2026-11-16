@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { DEMO_USERS } from '../../auth/demo-users.js';
 import type { Database } from '../database.js';
 import {
   auditEvents,
@@ -12,7 +13,6 @@ import {
   payBands,
   salaryRecords,
   settings,
-  users,
 } from '../schema/index.js';
 import type { GeneratedOrg } from './generate.js';
 
@@ -31,24 +31,6 @@ export interface InsertOptions {
   /** Rows per multi-row INSERT (seed.md: 1,000). */
   readonly batchSize?: number;
 }
-
-const DEMO_USERS = [
-  {
-    email: 'demo.hr@paylens.local',
-    displayName: 'Demo HR manager',
-    role: 'hr_manager',
-  },
-  {
-    email: 'demo.viewer@paylens.local',
-    displayName: 'Demo viewer',
-    role: 'viewer',
-  },
-  {
-    email: 'demo.admin@paylens.local',
-    displayName: 'Demo admin',
-    role: 'admin',
-  },
-] as const;
 
 /**
  * Writes a generated organisation in one transaction: either all of it lands or none of it.
@@ -160,9 +142,7 @@ export async function insertOrg(
       );
     }
 
-    await tx
-      .insert(users)
-      .values([...DEMO_USERS].map((u) => ({ ...u, isDemo: true })));
+    // Demo users are not seeded: migration 0003 creates them for every environment (ADR-014).
     // The audit log starts with one event per person, so "who changed what" has history.
     for (const batch of chunks(org.employees, batchSize)) {
       await tx.insert(auditEvents).values(
@@ -181,7 +161,8 @@ export async function insertOrg(
 }
 
 /**
- * Empties the business tables and the demo users; real users stay. audit_events refuses
+ * Empties the business tables and any older seeded demo users; real users and the demo users
+ * sign-in-off mode acts as (migration 0003, ADR-014) stay. audit_events refuses
  * TRUNCATE by trigger, so the guard is switched off only inside this transaction.
  */
 async function resetBusinessData(tx: Database): Promise<void> {
@@ -194,7 +175,10 @@ async function resetBusinessData(tx: Database): Promise<void> {
   await tx.execute(
     sql`alter table audit_events enable trigger audit_events_no_truncate`,
   );
-  await tx.execute(sql`delete from users where is_demo`);
+  const keep = Object.values(DEMO_USERS).map((user) => sql`${user.id}::uuid`);
+  await tx.execute(
+    sql`delete from users where is_demo and id not in (${sql.join(keep, sql`, `)})`,
+  );
 }
 
 function idsByCode(

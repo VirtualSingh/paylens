@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/pglite';
 import request from 'supertest';
 import { seedMiniAcme } from '../db/testing/mini-acme.js';
 import { createTestDatabase } from '../db/testing/pglite.js';
+import { DEMO_USERS } from '../auth/demo-users.js';
 import { createTestApp } from '../testing/create-test-app.js';
 
 // Three real changes through the API, then the audit log is read back.
@@ -23,7 +24,9 @@ describe('audit log', () => {
   }
 
   const as = (role: string, path: string) =>
-    request(app.getHttpServer()).get(`/api/v1${path}`).set('x-dev-role', role);
+    request(app.getHttpServer())
+      .get(`/api/v1${path}`)
+      .set('x-acting-role', role);
 
   beforeAll(async () => {
     pglite = await createTestDatabase();
@@ -38,7 +41,7 @@ describe('audit log', () => {
     const change = (path: string, requestId: string, ifMatch: string) =>
       request(app.getHttpServer())
         .post(`/api/v1/employees/${path}`)
-        .set('x-dev-role', 'hr_manager')
+        .set('x-acting-role', 'hr_manager')
         .set('x-request-id', requestId)
         .set('If-Match', ifMatch);
     await change(`${mehta}/salary-changes`, 'req-audit-1', '"1"')
@@ -51,7 +54,7 @@ describe('audit log', () => {
       .expect(201);
     await request(app.getHttpServer())
       .patch(`/api/v1/employees/${sharma}`)
-      .set('x-dev-role', 'hr_manager')
+      .set('x-acting-role', 'hr_manager')
       .set('x-request-id', 'req-audit-2')
       .set('If-Match', '"1"')
       .send({ jobTitle: 'Senior Software Engineer' })
@@ -84,7 +87,8 @@ describe('audit log', () => {
       expect(page.data[1]).toMatchObject({
         entityType: 'employee',
         entityId: sharma,
-        actor: null,
+        // Sign-in is off in tests: the change was made as the demo HR manager (ADR-014).
+        actor: { id: DEMO_USERS.hr_manager.id, displayName: 'Demo HR manager' },
         before: { jobTitle: 'Software Engineer' },
         after: { jobTitle: 'Senior Software Engineer' },
       });

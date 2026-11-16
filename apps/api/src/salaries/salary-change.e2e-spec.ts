@@ -54,7 +54,7 @@ describe('POST /api/v1/employees/:id/salary-changes', () => {
   ) => {
     const call = request(app.getHttpServer())
       .post(`/api/v1/employees/${id}/salary-changes`)
-      .set('x-dev-role', role)
+      .set('x-acting-role', role)
       .set('x-request-id', 'req-change-1')
       .send(body);
     return ifMatch === undefined ? call : call.set('If-Match', ifMatch);

@@ -35,7 +35,7 @@ describe('GET /api/v1/employees/:id', () => {
   const profile = (id: string, role = 'hr_manager') =>
     request(app.getHttpServer())
       .get(`/api/v1/employees/${id}`)
-      .set('x-dev-role', role);
+      .set('x-acting-role', role);
 
   it('shows an HR manager the full profile with current pay', async () => {
     const response = await profile(await idOf('ACME-000001'));

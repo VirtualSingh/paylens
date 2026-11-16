@@ -9,7 +9,9 @@ import { createTestApp } from '../testing/create-test-app.js';
 
 /**
  * Who may call what (security.md → A01): every route × {anonymous, viewer, hr_manager, admin}.
- * Anonymous → 401; signed in below the route's minimum role → 403; at or above it → success.
+ * Anonymous (sign-in on, no session) → 401; a role below the route's minimum → 403; at or
+ * above it → success. Roles act through x-acting-role with sign-in off (ADR-014): the same
+ * guard and rules, so the matrix proves both modes.
  * A route missing from this table fails the coverage test below, and a route without
  * @Roles() would answer 403 to everyone, failing its own rows — so nothing is unguarded.
  */
@@ -46,6 +48,18 @@ const newPerson = (email: string) => ({
 });
 
 const ROUTES: readonly RouteCase[] = [
+  {
+    route: 'GET /api/v1/auth/config',
+    minimum: 'public',
+    success: 200,
+    mutates: false,
+  },
+  {
+    route: 'GET /api/v1/auth/me',
+    minimum: 'viewer',
+    success: 200,
+    mutates: false,
+  },
   {
     route: 'GET /api/v1/health',
     minimum: 'public',
@@ -177,6 +191,8 @@ function expectedStatus(route: RouteCase, caller: Caller): number {
 describe('authorization matrix', () => {
   let pglite: PGlite;
   let app: INestApplication;
+  /** The same API with sign-in on: where "anonymous" means nobody signed in. */
+  let signInOn: INestApplication;
   let someone: string;
   let people = 0;
 
@@ -188,6 +204,10 @@ describe('authorization matrix', () => {
       today: '2026-11-14',
       docs: true,
     });
+    signInOn = await createTestApp({
+      database: drizzle(pglite),
+      auth: { authEnabled: true, googleClientId: null },
+    });
     const result = await pglite.query<{ id: string }>(
       "select id from employees where employee_code = 'ACME-000001'",
     );
@@ -196,6 +216,7 @@ describe('authorization matrix', () => {
 
   afterAll(async () => {
     await app.close();
+    await signInOn.close();
     await pglite.close();
   });
 
@@ -204,7 +225,7 @@ describe('authorization matrix', () => {
     people += 1;
     const response = await request(app.getHttpServer())
       .post('/api/v1/employees')
-      .set('x-dev-role', 'hr_manager')
+      .set('x-acting-role', 'hr_manager')
       .send(newPerson(`matrix.${people}@acme.test`))
       .expect(201);
     return response.body.id;
@@ -229,13 +250,15 @@ describe('authorization matrix', () => {
       // Letters, digits, dot, dash and underscore only: the request-id middleware drops others.
       const requestId = `matrix-${index}-${caller}`;
 
-      let call = request(app.getHttpServer())
+      let call = request(
+        (caller === 'anonymous' ? signInOn : app).getHttpServer(),
+      )
         [method === 'PATCH' ? 'patch' : method === 'POST' ? 'post' : 'get'](
           template.replace('{id}', id),
         )
         .set('x-request-id', requestId);
       if (caller !== 'anonymous') {
-        call = call.set('x-dev-role', caller);
+        call = call.set('x-acting-role', caller);
       }
       if (route.ifMatch === true) {
         call = call.set('If-Match', '"1"');

@@ -1,4 +1,11 @@
-import { boolean, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { userRole } from './enums.js';
 import { citext } from './types.js';
 
@@ -17,3 +24,26 @@ export const users = pgTable('users', {
     .defaultNow(),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
 });
+
+/**
+ * Signed-in sessions when sign-in is on (ADR-014). The cookie carries a random token; only its
+ * SHA-256 is stored, so a leaked table cannot be replayed as cookies.
+ */
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+    /** Hex SHA-256 of the cookie token. */
+    tokenHash: text('token_hash').notNull().unique(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  // Clean-up of expired sessions scans by expiry.
+  (table) => [index('sessions_expires_at').on(table.expiresAt)],
+);

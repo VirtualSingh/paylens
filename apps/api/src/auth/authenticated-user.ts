@@ -3,8 +3,8 @@ import type { Request } from 'express';
 
 /** The person behind a request, as far as authorization needs to know. */
 export interface AuthenticatedUser {
-  /** users.id; null for the Phase-1 dev header, which has no user row behind it. */
-  readonly id: string | null;
+  /** users.id: the signed-in user, or a demo user while sign-in is off (ADR-014). */
+  readonly id: string;
   readonly role: UserRole;
   readonly isDemo: boolean;
 }
@@ -20,8 +20,8 @@ declare global {
 }
 
 /**
- * Turns a request into a user, or null when nobody is signed in. Phase 1 uses a dev header;
- * Phase 2 replaces the provider with session cookies — the guard does not change.
+ * Turns a request into a user, or null when nobody is signed in: the session cookie with
+ * sign-in on, a demo user of the acting role with it off (ADR-014). The guard does not change.
  */
 export abstract class UserResolver {
   abstract resolve(

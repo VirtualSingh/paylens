@@ -38,15 +38,15 @@ describe('insertOrg', () => {
     );
   });
 
-  it('adds the three demo users and one audit event per person', async () => {
+  it('keeps the demo users of migration 0003 and adds one audit event per person', async () => {
     const users = await pglite.query<{ email: string; role: string }>(
       'select email, role::text from users where is_demo order by role',
     );
 
     expect(users.rows).toEqual([
-      { email: 'demo.admin@paylens.local', role: 'admin' },
-      { email: 'demo.hr@paylens.local', role: 'hr_manager' },
-      { email: 'demo.viewer@paylens.local', role: 'viewer' },
+      { email: 'demo.admin@paylens.app', role: 'admin' },
+      { email: 'demo.hr@paylens.app', role: 'hr_manager' },
+      { email: 'demo.viewer@paylens.app', role: 'viewer' },
     ]);
     expect(await count("audit_events where action = 'employee.imported'")).toBe(
       200,

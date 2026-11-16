@@ -30,7 +30,7 @@ describe('GET /api/v1/employees/:id/salary-history', () => {
   const history = (id: string, role = 'hr_manager') =>
     request(app.getHttpServer())
       .get(`/api/v1/employees/${id}/salary-history`)
-      .set('x-dev-role', role);
+      .set('x-acting-role', role);
 
   it('lists every salary record, newest first', async () => {
     const response = await history(mehta);
