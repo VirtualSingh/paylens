@@ -13,8 +13,11 @@ https://paylens-web-black.vercel.app/api/docs
 > The database scales to zero when idle: the first request after a quiet spell can take a
 > few seconds while it wakes; the next ones are fast.
 
-> Status: Phase 0 of 5 — walking skeleton (app shell, API health, database, CI, deployment).
-> What is being built and in which order: [`docs/requirements.md`](docs/requirements.md) and
+> Status: Phase 2 of 5. The API for people, pay, bands, FX and the audit log is complete
+> ([OpenAPI](docs/api/openapi.json)); the web app has the directory, profiles, the
+> change-salary sheet and add / edit / status. **Sign-in is not built yet**, so the live site
+> answers "sign in to continue": run it locally to use it (below). What is being built and in
+> which order: [`docs/requirements.md`](docs/requirements.md) and
 > [`docs/vault/plan.md`](docs/vault/plan.md).
 
 ## Run it locally (about 5 minutes)
@@ -27,11 +30,14 @@ pnpm install
 cp .env.example .env                 # local defaults; no secrets needed
 docker compose up -d --wait db       # Postgres 17 on :5432
 pnpm db:migrate                      # applies apps/api/src/db/migrations
+pnpm db:seed                         # 10,000 generated employees (about 30 s)
 pnpm dev                             # web on http://localhost:4200, API proxied at /api
 ```
 
-Check: http://localhost:4200 shows the app shell, and
+Check: http://localhost:4200/people lists 10,000 people, and
 http://localhost:4200/api/v1/health/ready answers `{"status":"ok","checks":{"database":"up"}}`.
+Until sign-in exists, development builds act as the role chosen in the top bar ("Acting as");
+switch to Viewer to see individual pay disappear. Production builds never send that role.
 
 ## Tests
 
@@ -44,6 +50,19 @@ pnpm nx e2e web-e2e   # Playwright journeys (starts the dev server itself)
 
 The commit history is written test-first: each behaviour lands as a failing test plus the
 smallest change that passes it, then refactors. `git log --oneline` reads as that story.
+
+Tests worth reading first:
+
+- **Who may do what** —
+  [`authorization-matrix.e2e-spec.ts`](apps/api/src/auth/authorization-matrix.e2e-spec.ts):
+  every route × anonymous / viewer / HR manager / admin → 401, 403 or success, and exactly
+  one audit event per change. Its route table must match the OpenAPI document, so a new
+  route cannot skip it.
+- **The API contract** — [`openapi-docs.e2e-spec.ts`](apps/api/src/common/openapi-docs.e2e-spec.ts)
+  fails when [`docs/api/openapi.json`](docs/api/openapi.json) drifts from the code
+  (`pnpm openapi` regenerates it).
+- **Money and history rules** — `libs/domain` (100% coverage): exact FX conversion, band
+  metrics, salary-change planning, leave and termination rules.
 
 ## How it is built
 

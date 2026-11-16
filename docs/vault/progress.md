@@ -1,6 +1,6 @@
 ---
 title: Progress — rolling window (keep ≤ 120 lines; details go to progress/log-*.md)
-updated: 2026-11-15
+updated: 2026-11-16
 status: active
 ---
 
@@ -10,36 +10,31 @@ Read this first every session. Keep it short: what is true now, what is next, wh
 blocked, what needs a human. Move detail to the dated log. When this file passes 120 lines,
 archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
-## Current state (as of 2026-11-15, evening)
+## Current state (as of 2026-11-16)
 
-- **Phase 0 and Phase 1 done** (one target missed: api suite 41.8 s vs < 40 s). UI unchanged
-  since Phase 0 by plan — it is Phase 2.
-- API `/api/v1` (behind `x-dev-role` until 2.1; inert in production): directory, profile +
-  ETag, salary history, salary change, create / edit / status of a person, countries,
-  departments, job families/levels, pay bands with counts, fx-rates. All changes: one
-  transaction, If-Match (428/409), domain rules (422 + code), one audit event.
-- OpenAPI 3.1 generated from the shared Zod schemas; `docs/api/openapi.json` is committed and
-  a test fails when it drifts (`pnpm openapi` regenerates it).
-- Neon production: 3 migrations, 10,000 employees / 43,918 salary records / 110 bands (seeded
-  in 21.9 s). Live: ready 200; data routes 401 without a session.
-- Tests 300 green: domain 71 (100% coverage) · shared 65 · api 154 · web 10.
-- CI green again from `ffd2214` (it was red on format for four pushes — see the log).
+- **Phases 0–1 done; Phase 2 done except sign-in** (2.1 parked by Pushpendra) and three UI
+  extras (below). Until sign-in, the live site answers "sign in to continue"; run locally.
+- API: people, pay, bands, FX, audit log (`GET /audit`, `/employees/:id/audit`); every route
+  in the role × endpoint matrix (69 cases); OpenAPI 3.1 committed and drift-tested.
+- Web: shell (search, reporting currency, dev-only role switch), directory (URL state, server
+  sort/filters/paging, band bars, viewer masking), profile (pay on the band, history, details,
+  audit), sheets: change salary (domain preview, warnings, If-Match), status (typed-code
+  termination), add employee, edit details. Checked on the real 10k stack in Chromium.
+- Neon production: 3 migrations, 10,000 employees seeded. Google client id stored (Vercel, .env).
+- Tests 453 green: domain 86 (100% coverage) · shared 70 · api 229 · web 68. CI green.
 
 ## Now (next 3 steps)
 
-1. Phase 2.1 — sessions (hashed opaque token, `__Host-pl_session`), `POST /auth/demo`,
-   `/auth/logout`, `GET /auth/me`, origin check; a session resolver replaces `x-dev-role`.
-2. Phase 2.2 — authorization matrix test (every mutating route × 4 roles), deny-by-default
-   startup check, `GET /employees/:id/audit` and `GET /audit`.
-3. Phase 2.3–2.4 — web foundation (API client with problem+json, session hook, shell) and
-   the directory page per ui-screens.md §4.
+1. ⌘K command palette (navigate, find a person) — ui.md → Keyboard; plan 2.3.
+2. Salary-history chart on the profile (ECharts step line, lazy-loaded) — plan 2.5.
+3. Directory column chooser and density toggle (36/40 px rows) — plan 2.4.
 
 ## Next (this phase)
 
-- 2.5 profile + change-salary sheet · 2.6 add / edit / status sheets · Google sign-in (2.1)
-  once Pushpendra has made the OAuth client (2.7).
-- Api suite under 40 s: most time is per-file PGlite + Nest boot; consider fewer, larger
-  e2e files or one shared app per worker.
+- 2.1 sign-in when Pushpendra un-parks it: sessions, demo login, Google (client id is in place),
+  `/auth/me`; then remove `x-dev-role` and the web's dev role switch; deployed journey (exit).
+- Multi-select filter popovers with chips (today: one value per filter, URL supports many).
+- Api suite under 40 s (per-file PGlite + Nest boot dominate).
 
 ## Later (next phases)
 
@@ -51,10 +46,11 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 | # | Decision | Default if no answer | Owner | Due |
 |---|---|---|---|---|
 | D-3 | Assistant model for the demo: Claude Haiku (~$5) vs Gemini Flash-Lite (free) | Provider-neutral code; demo on Gemini Flash-Lite if no key is funded by Phase 4 | Pushpendra | 2026-11-17 |
-| D-6 | Google OAuth client for sign-in (task 2.7): create it, then share the client id | Demo login only until it exists | Pushpendra | 2026-11-16 |
+| D-7 | When to build sign-in (2.1), parked on 2026-11-16 | Keep building the rest; ask again after the Phase 2 UI extras | Pushpendra | — |
 
-D-1, D-2, D-4, D-5 are closed (React; gender female/male; public repo; `main` with CI) —
-see [progress/decisions-archive.md](progress/decisions-archive.md).
+D-1, D-2, D-4, D-5 are closed (React; gender female/male; public repo; `main` with CI);
+D-6 closed 2026-11-16: the Google OAuth client exists (JavaScript origins only, no redirect
+URIs — the ID-token flow) — see [progress/decisions-archive.md](progress/decisions-archive.md).
 
 ## Decisions taken (short; ADR has the reasoning)
 
@@ -72,15 +68,24 @@ see [progress/decisions-archive.md](progress/decisions-archive.md).
 - 2026-11-15 · `@ApiContract` documents each route from the Zod schemas it validates with;
   problem+json and its `ProblemDetails` contract live in libs/shared for the web app.
 - 2026-11-15 · The agent checks CI after every push (CI was red four pushes unnoticed).
+- 2026-11-16 · Until sign-in, development builds send the role picked in the top bar as
+  `x-dev-role` (inert in production, never sent by production builds); 2.1 replaces it.
+- 2026-11-16 · TanStack Table pinned to 8 (v9 changed its hook API; the table is server-side).
+  React Router 8 (current; the plan said 7 — same data-router API).
+- 2026-11-16 · Filters are one native select each for now (accessible, URL already multi-value);
+  multi-select popovers later. Managers are entered by employee code, resolved by search.
+- 2026-11-16 · The web may import libs/domain (boundary rule widened) so previews run the
+  server's band maths; display formatting stays in the web (`formatMoney`).
 
 ## Blockers
 
-- (none) — Google sign-in waits on D-6 but demo login does not.
+- (none) — sign-in is parked by choice (D-7), not blocked.
 
 ## Review notes from Pushpendra (agent addresses these first)
 
 - 2026-11-15 · Asked for a status report (UI unchanged, CI red, slow pace). Answered; he chose
   to finish Phase 1 before starting the UI. Keep CI green and say what is user-visible.
+- 2026-11-16 · "Leave login logout as of now, build everything else" — done for 2.2–2.6.
 
 ## Useful facts (no secrets)
 
@@ -107,4 +112,5 @@ see [progress/decisions-archive.md](progress/decisions-archive.md).
 
 - [progress/log-2026-11-14.md](progress/log-2026-11-14.md) — planning session; build 0.0–0.2
 - [progress/log-2026-11-15.md](progress/log-2026-11-15.md) — build 0.3–0.6, Phase 1 (1.1–1.6)
+- [progress/log-2026-11-16.md](progress/log-2026-11-16.md) — Phase 2 without sign-in
 - [progress/decisions-archive.md](progress/decisions-archive.md) — older "Decisions taken"

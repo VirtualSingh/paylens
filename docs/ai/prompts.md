@@ -84,3 +84,17 @@ Template:
 - Rejected by the agent itself: a pre-check for duplicate emails (racy) → catch the unique
   violation; reopening a termination (rewrites history) → ADR-013.
 - Commits: 9b83278 … c3adb15 (+ this wrap-up).
+
+## 2026-11-16 · Claude Code (Opus) · Phase 2 without sign-in
+- Prompts used: "I want you to leave login logout as of now. build everything else. I'll
+  provide oauth client id in future. continue building phase 2"; "can you tell me what to add
+  in Authorized redirect URIs" (answer: none — the ID-token flow needs JavaScript origins only);
+  the client id itself; "continue".
+- Decided by Pushpendra: sign-in parked (D-7); the agent builds the UI behind a development-only
+  role switch instead, which production builds never send.
+- Rejected by the agent itself: TanStack Table 9 (new hook API, nothing gained for a server-side
+  table) → 8; a 10,000-option manager dropdown → type the employee code; widening test waits
+  blindly → measured the load first, warmed lazy modules, then sized the waits.
+- Caught by running the real stack, not by fixtures: monthly salaries shown without "/ month",
+  and no warning on a +14,227% typo in the salary preview. Both fixed with tests.
+- Commits: daa173b … d9afee9 (+ this wrap-up).
