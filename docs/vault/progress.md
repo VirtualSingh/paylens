@@ -12,8 +12,8 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Current state (as of 2026-11-16)
 
-- **Phases 0–1 done; Phase 2 done** except the directory's column chooser/density and
-  multi-select filters. Sign-in is behind `AUTH_ENABLED` (ADR-014), **off** in production:
+- **Phases 0–2 done** (Phase 2's remaining exit items need Pushpendra: actions file). Phase 3
+  started: analytics summary and breakdown (exact, per-person FX; hand-checked quartiles). Sign-in is behind `AUTH_ENABLED` (ADR-014), **off** in production:
   the live site opens as the demo HR manager; "Viewing as" switches role. On = Google sign-in.
 - API: people, pay, bands, FX, audit log (`GET /audit`, `/employees/:id/audit`); every route
   in the role × endpoint matrix (69 cases); OpenAPI 3.1 committed and drift-tested.
@@ -27,9 +27,10 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Now (next 3 steps)
 
-1. D-8 below (CSP vs runtime-injected styles), then apply the chosen fix.
-2. Directory column chooser and density toggle (36/40 px rows) — plan 2.4.
-3. Multi-select filter popovers with chips — plan 2.4.
+1. Phase 3.1 analytics, continued: band positioning (points for HR, counts for viewers),
+   outliers, 24-month trend, pay gap with n<5 suppression, 60 s memo, CSV export.
+2. Phase 3.3 dashboard on summary + breakdown (KPI tiles, payroll by country, median by level).
+3. D-8 (CSP vs runtime styles) as soon as Pushpendra answers — see actions-for-pushpendra.md.
 
 ## Next (this phase)
 
