@@ -10,7 +10,7 @@ Everything the build is waiting on you for, in the order to do it. Each item say
 long, the exact steps, and what to send back. Claude keeps this file current: done items are
 struck through, never deleted. Total: about 45 minutes, plus the two replies.
 
-## 1. Reply: CSP for runtime styles (D-8) — 1 minute, decides now
+## ~~1. Reply: CSP for runtime styles (D-8)~~ — done 2026-11-16: hashes (option 1)
 
 **Why:** on the live site the Content-Security-Policy blocks three `<style>` blocks that the
 toast (sonner) and dialog (Radix) libraries add at runtime. Effect: toasts such as "Salary
@@ -87,5 +87,6 @@ cover structure (axe), but only a person can say whether it feels right.
 
 ## Done
 
+- ~~D-8 CSP: hashes~~ (Pushpendra rejected `unsafe-inline` — the README's third rejected AI proposal).
 - ~~D-1 React~~ · ~~D-2 gender~~ · ~~D-4 public repo~~ · ~~D-5 main with CI~~ · ~~D-6 Google
   OAuth client~~ · ~~D-7 sign-in parked~~ (built behind the flag instead, ADR-014).

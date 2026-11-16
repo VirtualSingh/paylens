@@ -30,7 +30,7 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 1. Phase 3.1 analytics, continued: band positioning (points for HR, counts for viewers),
    outliers, 24-month trend, pay gap with n<5 suppression, 60 s memo, CSV export.
 2. Phase 3.3 dashboard on summary + breakdown (KPI tiles, payroll by country, median by level).
-3. D-8 (CSP vs runtime styles) as soon as Pushpendra answers — see actions-for-pushpendra.md.
+3. Phase 3.2 pay bands and FX management (admin), then 3.4 CSV import/export.
 
 ## Next (this phase)
 
@@ -50,7 +50,6 @@ Every action waiting on Pushpendra, with steps: [actions-for-pushpendra.md](acti
 | # | Decision | Default if no answer | Owner | Due |
 |---|---|---|---|---|
 | D-3 | Assistant model for the demo: Claude Haiku (~$5) vs Gemini Flash-Lite (free) | Provider-neutral code; demo on Gemini Flash-Lite if no key is funded by Phase 4 | Pushpendra | 2026-11-17 |
-| D-8 | Live CSP blocks runtime `<style>` blocks (sonner toasts, Radix scroll lock) → toasts unstyled. Allow inline styles, or pin the 3 hashes? | Pin the hashes (stays strict; update on library upgrades) | Pushpendra | 2026-11-17 |
 
 D-1, D-2, D-4, D-5 are closed (React; gender female/male; public repo; `main` with CI);
 D-6 closed 2026-11-16: the Google OAuth client exists (JavaScript origins only, no redirect
@@ -75,6 +74,9 @@ URIs — the ID-token flow) — see [progress/decisions-archive.md](progress/dec
 - 2026-11-16 · Sign-in flag (ADR-014): off by default; demo users (migration 0003) act for
   visitors via `x-acting-role`; on = Google ID token → hashed session, `__Host-` cookie.
   D-7 closed: sign-in built behind the flag.
+- 2026-11-16 · D-8: runtime styles allowed by SHA-256 hash, not 'unsafe-inline' (Pushpendra).
+  The shell scrolls its main area, never the page, so Radix's scroll-lock style is constant;
+  `csp.spec.tsx` fails if a library update injects a style the CSP does not allow.
 - 2026-11-16 · TanStack Table pinned to 8 (v9 changed its hook API; the table is server-side).
   React Router 8 (current; the plan said 7 — same data-router API).
 - 2026-11-16 · Filters are one native select each for now (accessible, URL already multi-value);

@@ -108,3 +108,9 @@ Template:
 - Refused by the permission check, left to Pushpendra: relaxing the web CSP's style-src for
   runtime-injected styles (D-8). The agent had proposed `'unsafe-inline'` for styles.
 - Commits: 05532fa … d992e5a (+ this wrap-up).
+
+## 2026-11-16 · D-8 decided by Pushpendra
+- **Rejected by Pushpendra:** the agent's proposal to allow inline styles in the CSP
+  (`style-src 'unsafe-inline'`). He chose to allow the three runtime styles by SHA-256 hash.
+  The agent then found the scroll-lock style varies with scrollbar width, made the page itself
+  never scroll so the hash is constant, and added a test that fails on any unlisted style.
