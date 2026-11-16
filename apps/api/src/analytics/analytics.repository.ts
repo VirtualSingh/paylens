@@ -1,6 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { IsoDate } from '@paylens/domain';
-import { PAY_FREQUENCIES, type PayFrequencyName } from '@paylens/shared';
+import {
+  type Gender,
+  GENDERS,
+  PAY_FREQUENCIES,
+  type PayFrequencyName,
+} from '@paylens/shared';
 import { sql } from 'drizzle-orm';
 import { type Database, DATABASE } from '../db/database.js';
 import { column, selectRows } from '../db/select-rows.js';
@@ -9,6 +14,9 @@ import { column, selectRows } from '../db/select-rows.js';
 export interface CompRow {
   /** For people (band positioning points): the code, never the name. */
   readonly employeeCode: string;
+  /** For the pay gap only (HR managers and admins, security.md). */
+  readonly gender: Gender;
+  readonly jobFamily: { readonly key: string; readonly label: string };
   /** What a breakdown can group by: code and the label people read. */
   readonly country: { readonly key: string; readonly label: string };
   readonly department: { readonly key: string; readonly label: string };
@@ -44,7 +52,8 @@ export class AnalyticsRepository {
   async compOn(asOf: IsoDate): Promise<CompRow[]> {
     const rows = await selectRows(
       this.db,
-      sql`select e.employee_code, e.country_code, c.name as country_name, d.code as department_code,
+      sql`select e.employee_code, e.gender::text, f.code as job_family_code,
+                 f.name as job_family_name, e.country_code, c.name as country_name, d.code as department_code,
                  d.name as department_name, l.code as level_code,
                  (case l.track when 'ic' then 0 else 100 end + l.rank)::int as level_order,
                  s.amount_minor::text, s.currency_code, s.pay_frequency::text,
@@ -53,6 +62,7 @@ export class AnalyticsRepository {
           from employees e
           join countries c on c.code = e.country_code
           join departments d on d.id = e.department_id
+          join job_families f on f.id = e.job_family_id
           join job_levels l on l.id = e.job_level_id
           left join salary_records s
             on s.employee_id = e.id
@@ -73,6 +83,11 @@ export class AnalyticsRepository {
       const min = column.textOrNull(row, 'min_minor');
       return {
         employeeCode: column.text(row, 'employee_code'),
+        gender: column.oneOf(row, 'gender', GENDERS),
+        jobFamily: {
+          key: column.text(row, 'job_family_code'),
+          label: column.text(row, 'job_family_name'),
+        },
         country: {
           key: column.text(row, 'country_code'),
           label: column.text(row, 'country_name'),

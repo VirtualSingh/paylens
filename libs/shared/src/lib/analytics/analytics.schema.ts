@@ -96,3 +96,25 @@ export const BandPositioningSchema = z.object({
 });
 export type BandPositioning = z.infer<typeof BandPositioningSchema>;
 export type BandPoint = z.infer<typeof BandPointSchema>;
+
+/**
+ * `GET /analytics/pay-gap` — women's pay against men's (the reference, EU convention) per
+ * level × job family, the equal-value proxy (analytics.md). HR managers and admins only.
+ * Gaps: (men − women) ÷ men, 4 decimals; suppressed when either side has fewer than 5.
+ */
+export const PayGapCategorySchema = z.object({
+  levelCode: z.string(),
+  jobFamily: z.object({ code: z.string(), name: z.string() }),
+  femaleCount: z.number().int(),
+  maleCount: z.number().int(),
+  suppressed: z.boolean(),
+  meanGap: z.number().nullable(),
+  medianGap: z.number().nullable(),
+});
+export const PayGapSchema = z.object({
+  asOf: z.iso.date(),
+  reportingCurrency: z.string(),
+  reference: z.literal('male'),
+  categories: z.array(PayGapCategorySchema),
+});
+export type PayGapReport = z.infer<typeof PayGapSchema>;

@@ -253,3 +253,81 @@ describe('GET /api/v1/analytics/band-positioning', () => {
     ]);
   });
 });
+
+describe('GET /api/v1/analytics/pay-gap', () => {
+  let pglite: PGlite;
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    pglite = await createTestDatabase();
+    await seedMiniAcme(pglite);
+    // Five men at $100k and five women at $90k, IC3 Software, US: enough people to compare.
+    await pglite.exec(`
+      insert into employees (employee_code, first_name, last_name, work_email, country_code,
+        department_id, job_family_id, job_level_id, job_title, employment_type, fte, hire_date,
+        status, gender)
+      select 'GAP-' || x.g || '-' || i, 'Gap', 'Person ' || i, 'gap.' || x.g || i || '@acme.test',
+             'US', d.id, f.id, l.id, 'Engineer', 'full_time', 1, '2024-01-01', 'active',
+             x.g::gender
+      from generate_series(1, 5) as i
+      cross join (values ('male'), ('female')) as x(g)
+      join departments d on d.code = 'ENG'
+      join job_families f on f.code = 'SWE'
+      join job_levels l on l.code = 'IC3';
+      insert into salary_records (employee_id, amount_minor, currency_code, pay_frequency,
+        effective_from, reason)
+      select id, case when gender = 'male' then 10000000 else 9000000 end, 'USD', 'annual',
+             '2024-01-01', 'hire'
+      from employees where employee_code like 'GAP-%';
+    `);
+    app = await createTestApp({
+      database: drizzle(pglite),
+      today: '2026-11-14',
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+    await pglite.close();
+  });
+
+  const payGap = (role = 'hr_manager') =>
+    request(app.getHttpServer())
+      .get('/api/v1/analytics/pay-gap')
+      .set('x-acting-role', role);
+
+  it('compares women with men per level and job family, on mean and median', async () => {
+    // IC3 Software: men 5 × $100k; women 5 × $90k plus Diya Sharma ($21,686.75).
+    // Median gap (100k − 90k) / 100k = 0.1; mean gap 64,156,625 / 300,000,000 = 0.2139.
+    const response = await payGap().expect(200);
+
+    expect(response.body.reference).toBe('male');
+    expect(response.body.categories).toContainEqual({
+      levelCode: 'IC3',
+      jobFamily: { code: 'SWE', name: 'Software' },
+      femaleCount: 6,
+      maleCount: 5,
+      suppressed: false,
+      meanGap: 0.2139,
+      medianGap: 0.1,
+    });
+  });
+
+  it('stays silent where either side has fewer than five people', async () => {
+    const response = await payGap().expect(200);
+
+    expect(response.body.categories).toContainEqual({
+      levelCode: 'IC4',
+      jobFamily: { code: 'SWE', name: 'Software' },
+      femaleCount: 3,
+      maleCount: 2,
+      suppressed: true,
+      meanGap: null,
+      medianGap: null,
+    });
+  });
+
+  it('is for HR managers: gender is not for viewers', async () => {
+    await payGap('viewer').expect(403);
+  });
+});

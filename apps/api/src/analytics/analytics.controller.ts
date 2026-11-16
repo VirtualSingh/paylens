@@ -11,6 +11,8 @@ import {
   AnalyticsSummarySchema,
   type BandPositioning,
   BandPositioningSchema,
+  type PayGapReport,
+  PayGapSchema,
 } from '@paylens/shared';
 import { CurrentUser, Roles } from '../auth/access.decorators.js';
 import type { AuthenticatedUser } from '../auth/authenticated-user.js';
@@ -79,5 +81,24 @@ export class AnalyticsController {
     @CurrentUser() reader: AuthenticatedUser,
   ): Promise<BandPositioning> {
     return this.analytics.bandPositioning(query, reader);
+  }
+
+  /** Gender is HR data (security.md), so the pay gap is for HR managers and admins. */
+  @Get('pay-gap')
+  @Roles('hr_manager')
+  @ApiContract({
+    summary: 'Gender pay gap per level and job family (men as reference)',
+    query: AnalyticsQuerySchema,
+    success: {
+      status: HttpStatus.OK,
+      schema: PayGapSchema,
+      description: 'Suppressed where either side has fewer than five people',
+    },
+    problems: [HttpStatus.BAD_REQUEST],
+  })
+  payGap(
+    @Query(new ZodValidationPipe(AnalyticsQuerySchema)) query: AnalyticsQuery,
+  ): Promise<PayGapReport> {
+    return this.analytics.payGap(query);
   }
 }

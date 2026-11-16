@@ -10,12 +10,14 @@ import {
   Money,
   P25,
   P75,
+  payGap,
   percentileCont,
 } from '@paylens/domain';
 import {
   type BandPoint,
   type BandPositioning,
   hasAtLeast,
+  type PayGapReport,
 } from '@paylens/shared';
 import type {
   AnalyticsBreakdown,
@@ -199,6 +201,70 @@ export class AnalyticsService {
               (p, q) => p.penetration - q.penetration,
             ),
           }),
+        })),
+    };
+  }
+
+  /**
+   * Women's pay against men's per level × job family (canonical question 5), from the same
+   * per-person amounts as every other figure. The domain's payGap stays silent when either
+   * side has fewer than five people.
+   */
+  async payGap(query: AnalyticsQuery): Promise<PayGapReport> {
+    const { asOf, measured } = await this.measure(query);
+    const categories = new Map<
+      string,
+      {
+        levelCode: string;
+        levelOrder: number;
+        jobFamily: { code: string; name: string };
+        female: bigint[];
+        male: bigint[];
+        femaleCount: number;
+        maleCount: number;
+      }
+    >();
+    for (const { row, reporting } of measured) {
+      const key = `${row.level.key}|${row.jobFamily.key}`;
+      let category = categories.get(key);
+      if (category === undefined) {
+        category = {
+          levelCode: row.level.key,
+          levelOrder: row.level.order,
+          jobFamily: { code: row.jobFamily.key, name: row.jobFamily.label },
+          female: [],
+          male: [],
+          femaleCount: 0,
+          maleCount: 0,
+        };
+        categories.set(key, category);
+      }
+      if (row.gender === 'female') {
+        category.femaleCount += 1;
+      } else {
+        category.maleCount += 1;
+      }
+      if (reporting !== null) {
+        category[row.gender].push(reporting);
+      }
+    }
+    return {
+      asOf,
+      reportingCurrency: query.reportingCurrency,
+      reference: 'male',
+      categories: [...categories.values()]
+        .sort(
+          (a, b) =>
+            a.levelOrder - b.levelOrder ||
+            a.levelCode.localeCompare(b.levelCode) ||
+            a.jobFamily.code.localeCompare(b.jobFamily.code),
+        )
+        .map((category) => ({
+          levelCode: category.levelCode,
+          jobFamily: category.jobFamily,
+          femaleCount: category.femaleCount,
+          maleCount: category.maleCount,
+          ...payGap(category.male, category.female),
         })),
     };
   }
