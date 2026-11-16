@@ -83,3 +83,107 @@ describe('GET /api/v1/analytics/summary', () => {
     await summary('', 'viewer').expect(200);
   });
 });
+
+/*
+ * By country, USD cents, sorted inside each country (percentile_cont, rounded half-even):
+ *   GB 9,750,000 · 10,625,000 · 12,500,000 · 15,625,000 → p25 10,406,250 (position 0.75),
+ *      median 11,562,500, p75 13,281,250 (position 2.25); within 2 of 4
+ *   US 9,500,000 · 13,000,000 · 15,000,000 → p25 11,250,000, median 13,000,000, p75 14,000,000
+ *   IN 2,168,675 · 2,650,602 · 3,433,735 → p25 2,409,638 (…638.5 → even), median 2,650,602,
+ *      p75 3,042,168 (…168.5 → even); within 2 of 3
+ */
+describe('GET /api/v1/analytics/breakdown', () => {
+  let pglite: PGlite;
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    pglite = await createTestDatabase();
+    await seedMiniAcme(pglite);
+    app = await createTestApp({
+      database: drizzle(pglite),
+      today: '2026-11-14',
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+    await pglite.close();
+  });
+
+  const usd = (cents: number) => ({
+    amountMinor: String(cents),
+    currency: 'USD',
+  });
+
+  it('splits payroll by country, largest first, with quartiles and band share', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/analytics/breakdown?by=country')
+      .set('x-acting-role', 'viewer')
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      by: 'country',
+      reportingCurrency: 'USD',
+    });
+    expect(response.body.rows).toEqual([
+      {
+        key: 'GB',
+        label: 'United Kingdom',
+        headcount: 4,
+        annualPayroll: usd(48_500_000),
+        p25: usd(10_406_250),
+        median: usd(11_562_500),
+        p75: usd(13_281_250),
+        withinBandShare: 0.5,
+        unconvertedCount: 0,
+      },
+      {
+        key: 'US',
+        label: 'United States',
+        headcount: 3,
+        annualPayroll: usd(37_500_000),
+        p25: usd(11_250_000),
+        median: usd(13_000_000),
+        p75: usd(14_000_000),
+        withinBandShare: 0.6667,
+        unconvertedCount: 0,
+      },
+      {
+        key: 'IN',
+        label: 'India',
+        headcount: 3,
+        annualPayroll: usd(8_253_012),
+        p25: usd(2_409_638),
+        median: usd(2_650_602),
+        p75: usd(3_042_168),
+        withinBandShare: 0.6667,
+        unconvertedCount: 0,
+      },
+    ]);
+  });
+
+  it('lists levels in ladder order rather than by payroll', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/analytics/breakdown?by=level')
+      .set('x-acting-role', 'viewer')
+      .expect(200);
+
+    expect(
+      response.body.rows.map((row: { key: string; headcount: number }) => [
+        row.key,
+        row.headcount,
+      ]),
+    ).toEqual([
+      ['IC3', 1],
+      ['IC4', 8],
+      ['M1', 1],
+    ]);
+  });
+
+  it('refuses a dimension it does not know', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/analytics/breakdown?by=salary')
+      .set('x-acting-role', 'viewer')
+      .expect(400);
+  });
+});

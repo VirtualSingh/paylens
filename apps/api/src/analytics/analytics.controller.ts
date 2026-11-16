@@ -1,6 +1,10 @@
 import { Controller, Get, HttpStatus, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
+  type AnalyticsBreakdown,
+  type AnalyticsBreakdownQuery,
+  AnalyticsBreakdownQuerySchema,
+  AnalyticsBreakdownSchema,
   type AnalyticsQuery,
   AnalyticsQuerySchema,
   type AnalyticsSummary,
@@ -33,5 +37,24 @@ export class AnalyticsController {
     @Query(new ZodValidationPipe(AnalyticsQuerySchema)) query: AnalyticsQuery,
   ): Promise<AnalyticsSummary> {
     return this.analytics.summary(query);
+  }
+
+  @Get('breakdown')
+  @Roles('viewer')
+  @ApiContract({
+    summary: 'The summary figures per country, department or level',
+    query: AnalyticsBreakdownQuerySchema,
+    success: {
+      status: HttpStatus.OK,
+      schema: AnalyticsBreakdownSchema,
+      description: 'Largest payroll first; levels in ladder order',
+    },
+    problems: [HttpStatus.BAD_REQUEST],
+  })
+  breakdown(
+    @Query(new ZodValidationPipe(AnalyticsBreakdownQuerySchema))
+    query: AnalyticsBreakdownQuery,
+  ): Promise<AnalyticsBreakdown> {
+    return this.analytics.breakdown(query);
   }
 }

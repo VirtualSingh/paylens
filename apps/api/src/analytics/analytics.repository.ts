@@ -7,6 +7,15 @@ import { column, selectRows } from '../db/select-rows.js';
 
 /** One active person on a date: their salary then, and their band then (local currency). */
 export interface CompRow {
+  /** What a breakdown can group by: code and the label people read. */
+  readonly country: { readonly key: string; readonly label: string };
+  readonly department: { readonly key: string; readonly label: string };
+  /** Levels sort by the ladder (track, then rank), not by name. */
+  readonly level: {
+    readonly key: string;
+    readonly label: string;
+    readonly order: number;
+  };
   readonly salary: {
     readonly amountMinor: bigint;
     readonly currency: string;
@@ -33,10 +42,16 @@ export class AnalyticsRepository {
   async compOn(asOf: IsoDate): Promise<CompRow[]> {
     const rows = await selectRows(
       this.db,
-      sql`select s.amount_minor::text, s.currency_code, s.pay_frequency::text,
+      sql`select e.country_code, c.name as country_name, d.code as department_code,
+                 d.name as department_name, l.code as level_code,
+                 (case l.track when 'ic' then 0 else 100 end + l.rank)::int as level_order,
+                 s.amount_minor::text, s.currency_code, s.pay_frequency::text,
                  b.min_minor::text, b.mid_minor::text, b.max_minor::text,
                  b.currency_code as band_currency
           from employees e
+          join countries c on c.code = e.country_code
+          join departments d on d.id = e.department_id
+          join job_levels l on l.id = e.job_level_id
           left join salary_records s
             on s.employee_id = e.id
            and s.effective_from <= ${asOf}
@@ -55,6 +70,19 @@ export class AnalyticsRepository {
       const amount = column.textOrNull(row, 'amount_minor');
       const min = column.textOrNull(row, 'min_minor');
       return {
+        country: {
+          key: column.text(row, 'country_code'),
+          label: column.text(row, 'country_name'),
+        },
+        department: {
+          key: column.text(row, 'department_code'),
+          label: column.text(row, 'department_name'),
+        },
+        level: {
+          key: column.text(row, 'level_code'),
+          label: column.text(row, 'level_code'),
+          order: column.number(row, 'level_order'),
+        },
         salary:
           amount === null
             ? null

@@ -26,6 +26,8 @@ interface RouteCase {
   readonly mutates: boolean;
   readonly body?: object;
   readonly ifMatch?: boolean;
+  /** A query string the route needs, e.g. "?by=country". */
+  readonly query?: string;
 }
 
 const inr = (rupees: number) => ({
@@ -62,6 +64,13 @@ const ROUTES: readonly RouteCase[] = [
   },
   {
     route: 'GET /api/v1/analytics/summary',
+    minimum: 'viewer',
+    success: 200,
+    mutates: false,
+  },
+  {
+    route: 'GET /api/v1/analytics/breakdown',
+    query: '?by=country',
     minimum: 'viewer',
     success: 200,
     mutates: false,
@@ -260,7 +269,7 @@ describe('authorization matrix', () => {
         (caller === 'anonymous' ? signInOn : app).getHttpServer(),
       )
         [method === 'PATCH' ? 'patch' : method === 'POST' ? 'post' : 'get'](
-          template.replace('{id}', id),
+          template.replace('{id}', id) + (route.query ?? ''),
         )
         .set('x-request-id', requestId);
       if (caller !== 'anonymous') {
