@@ -13,6 +13,8 @@ and growing it are in the repo root `CLAUDE.md` ("The vault").
 | File | What it answers | Read when |
 |---|---|---|
 | [progress.md](progress.md) | Where are we, what's next, what's blocked | Every session start |
+| [actions-for-pushpendra.md](actions-for-pushpendra.md) | Everything waiting on Pushpendra, with exact steps | When something needs him |
+| [actions-for-pushpendra.md](actions-for-pushpendra.md) | Everything waiting on Pushpendra, with exact steps | When something needs him |
 | [plan.md](plan.md) | The 5-day execution plan, phase by phase | Picking the next task |
 | [product.md](product.md) | What we are building, for whom, and what we are not | Scoping a feature |
 | [design.md](design.md) | How it is built: architecture, data, API, UI, security, tests | Implementing anything |

@@ -44,6 +44,8 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
 ## Decisions pending (humans only)
 
+Every action waiting on Pushpendra, with steps: [actions-for-pushpendra.md](actions-for-pushpendra.md).
+
 | # | Decision | Default if no answer | Owner | Due |
 |---|---|---|---|---|
 | D-3 | Assistant model for the demo: Claude Haiku (~$5) vs Gemini Flash-Lite (free) | Provider-neutral code; demo on Gemini Flash-Lite if no key is funded by Phase 4 | Pushpendra | 2026-11-17 |
