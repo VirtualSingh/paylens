@@ -10,3 +10,4 @@ export * from './lib/employees/employee-write.schema.js';
 export * from './lib/problem/problem-details.schema.js';
 export * from './lib/audit/audit.schema.js';
 export * from './lib/auth/auth.schema.js';
+export * from './lib/analytics/analytics.schema.js';
