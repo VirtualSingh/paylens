@@ -3,11 +3,12 @@ import type {
   EmployeeProfile,
   SalaryRecordJson,
 } from '@paylens/shared';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { BandBar } from '../../components/band-bar';
 import { MoneyText } from '../../components/money';
 import { ErrorState } from '../../components/page-states';
+import { Button } from '../../components/ui/button';
 import {
   Tabs,
   TabsContent,
@@ -30,11 +31,40 @@ import {
   STATUS_LABELS,
 } from '../../lib/labels';
 import { useCountries } from '../../lib/lookups';
+import { SalaryChangeSheet } from './salary-change-sheet';
 import {
   useEmployee,
   useEmployeeAudit,
   useSalaryHistory,
 } from './use-employee';
+
+/** The profile's one primary action (ui.md principle 4) and the sheet it opens. */
+function ChangeSalaryAction({
+  profile,
+  etag,
+  countryName,
+}: {
+  profile: EmployeeProfile;
+  etag: string;
+  countryName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  // The sheet needs the current record's start date for its hint; the tab loads it too.
+  const history = useSalaryHistory(profile.id, true);
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Change salary</Button>
+      <SalaryChangeSheet
+        profile={profile}
+        etag={etag}
+        history={history.data ?? []}
+        countryName={countryName}
+        open={open}
+        onOpenChange={setOpen}
+      />
+    </>
+  );
+}
 
 /** One person (ui-screens.md §5): who they are, their pay against the band, and history. */
 export function EmployeePage() {
@@ -49,7 +79,7 @@ export function EmployeePage() {
   if (employee.data === undefined) {
     return <p className="text-muted-foreground">Loading…</p>;
   }
-  const { profile } = employee.data;
+  const { profile, etag } = employee.data;
   const countryName =
     countries.data?.find((country) => country.code === profile.countryCode)
       ?.name ?? profile.countryCode;
@@ -60,9 +90,21 @@ export function EmployeePage() {
         ← People
       </Link>
       <header className="flex flex-col gap-1">
-        <h1 className="text-xl">
-          {profile.firstName} {profile.lastName}
-        </h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-xl">
+            {profile.firstName} {profile.lastName}
+          </h1>
+          {canManagePay &&
+            profile.status !== 'terminated' &&
+            profile.pay !== null &&
+            profile.pay !== undefined && (
+              <ChangeSalaryAction
+                profile={profile}
+                etag={etag}
+                countryName={countryName}
+              />
+            )}
+        </div>
         <p>
           {[
             profile.employeeCode,
