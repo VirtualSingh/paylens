@@ -33,8 +33,10 @@ export function AppShell() {
     );
   }
   return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-line">
+    // The page never scrolls; the main area does. Radix's scroll lock then always computes a
+    // 0 px scrollbar gap, so its injected style has one fixed CSP hash (D-8, vercel.json).
+    <div className="flex h-screen overflow-hidden">
+      <aside className="flex w-60 shrink-0 flex-col overflow-y-auto border-r border-line">
         <div className="flex h-14 items-center px-6 text-md font-semibold">
           PayLens
         </div>
@@ -61,7 +63,7 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar session={session} />
         <CommandPalette />
-        <main className="flex-1 p-6">
+        <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>
