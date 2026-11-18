@@ -21,7 +21,10 @@ export const routes: RouteObject[] = [
         children: [
           {
             index: true,
-            element: <ComingLater section="The dashboard" />,
+            lazy: async () => ({
+              Component: (await import('../features/dashboard/dashboard-page'))
+                .DashboardPage,
+            }),
           },
           {
             path: 'people',
