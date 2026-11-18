@@ -21,11 +21,12 @@ archive "Decisions taken" into `progress/decisions-archive.md` and trim.
   country name not mocked in the spec) + their routes in `routes.tsx`.
 - API: people, pay, bands, FX, audit, analytics; role × endpoint matrix; OpenAPI drift-tested.
 - Web: shell, directory, profile, sheets, dashboard. Neon: 4 migrations, 10,000 people.
-- Tests at last full run: domain 98 (100% coverage) · shared 80 · api 281 · web 89. CI green
-  through `e85adba`.
+- Tests at last full run: domain 98 (100% coverage) · shared 80 · api 281 · web 89. Tests/lint/build
+  green; **CI red on the OSV security scan**: new picomatch advisory, no fix yet (see log).
 
 ## Now (next 3 steps) — "wrap all the development as soon as possible"
 
+0. CI: picomatch advisory (GHSA-fc5q-39xc-vjpf), see the log; ask Pushpendra before an ignore.
 1. Fix the pay bands spec (mock the countries lookup), lint/typecheck/test web, commit
    `feat(web): pay bands and audit log pages`, push, check CI.
 2. Cut list to `product/backlog.md` with reasons: CSV import (3.4) and export, 24-month trend,
@@ -86,7 +87,8 @@ URIs — the ID-token flow) — see [progress/decisions-archive.md](progress/dec
 
 ## Blockers
 
-- (none) — sign-in is parked by choice (D-7), not blocked.
+- CI security scan red since `e85adba`: picomatch GHSA-fc5q-39xc-vjpf, no fixed version.
+- Sign-in is parked by choice (D-7), not blocked.
 
 ## Review notes from Pushpendra (agent addresses these first)
 
