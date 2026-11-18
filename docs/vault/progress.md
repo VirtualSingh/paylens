@@ -1,6 +1,6 @@
 ---
 title: Progress — rolling window (keep ≤ 120 lines; details go to progress/log-*.md)
-updated: 2026-11-16
+updated: 2026-11-18
 status: active
 ---
 
@@ -10,27 +10,27 @@ Read this first every session. Keep it short: what is true now, what is next, wh
 blocked, what needs a human. Move detail to the dated log. When this file passes 120 lines,
 archive "Decisions taken" into `progress/decisions-archive.md` and trim.
 
-## Current state (as of 2026-11-16)
+## Current state (as of 2026-11-18, paused mid wrap-up)
 
-- **Phases 0–2 done** (Phase 2's remaining exit items need Pushpendra: actions file). Phase 3
-  started: analytics summary and breakdown (exact, per-person FX; hand-checked quartiles). Sign-in is behind `AUTH_ENABLED` (ADR-014), **off** in production:
-  the live site opens as the demo HR manager; "Viewing as" switches role. On = Google sign-in.
-- API: people, pay, bands, FX, audit log (`GET /audit`, `/employees/:id/audit`); every route
-  in the role × endpoint matrix (69 cases); OpenAPI 3.1 committed and drift-tested.
-- Web: shell (search, ⌘K palette, reporting currency, "Viewing as"), directory (URL state, server
-  sort/filters/paging, band bars, viewer masking), profile (pay on the band, history, details,
-  audit, history chart), sheets: change salary (domain preview, warnings, If-Match), status
-  (typed-code termination), add employee, edit details. Checked live in Chromium.
-- Neon production: 4 migrations (0003: sessions + demo users), 10,000 employees. Vercel api:
-  `AUTH_ENABLED=false`, `GOOGLE_CLIENT_ID` set.
-- Tests 453 green: domain 86 (100% coverage) · shared 70 · api 229 · web 68. CI green.
+- **Paused by Pushpendra** (away a few hours). Resume at "Now" step 1. Detail:
+  [progress/log-2026-11-18.md](progress/log-2026-11-18.md).
+- **Phases 0–2 done**; Phase 3 analytics built: summary, breakdown, band positioning, pay gap
+  (n<5 suppressed). Dashboard live (`e85adba`). Sign-in behind `AUTH_ENABLED` (ADR-014),
+  **off** in production: the site opens as the demo HR manager; "Viewing as" switches role.
+- **Uncommitted in the working tree:** audit log page (green) and pay bands page (1 test red:
+  country name not mocked in the spec) + their routes in `routes.tsx`.
+- API: people, pay, bands, FX, audit, analytics; role × endpoint matrix; OpenAPI drift-tested.
+- Web: shell, directory, profile, sheets, dashboard. Neon: 4 migrations, 10,000 people.
+- Tests at last full run: domain 98 (100% coverage) · shared 80 · api 281 · web 89. CI green
+  through `e85adba`.
 
-## Now (next 3 steps)
+## Now (next 3 steps) — "wrap all the development as soon as possible"
 
-1. Phase 3.1 analytics, continued: band positioning (points for HR, counts for viewers),
-   outliers, 24-month trend, pay gap with n<5 suppression, 60 s memo, CSV export.
-2. Phase 3.3 dashboard on summary + breakdown (KPI tiles, payroll by country, median by level).
-3. Phase 3.2 pay bands and FX management (admin), then 3.4 CSV import/export.
+1. Fix the pay bands spec (mock the countries lookup), lint/typecheck/test web, commit
+   `feat(web): pay bands and audit log pages`, push, check CI.
+2. Cut list to `product/backlog.md` with reasons: CSV import (3.4) and export, 24-month trend,
+   outliers, 60 s memo, admin editing of bands/FX/settings (3.2), AI assistant (Phase 4, D-3).
+3. README status + features, vault, prompts.md; push; CI; live check of the three new pages.
 
 ## Next (this phase)
 
@@ -120,4 +120,5 @@ URIs — the ID-token flow) — see [progress/decisions-archive.md](progress/dec
 - [progress/log-2026-11-14.md](progress/log-2026-11-14.md) — planning session; build 0.0–0.2
 - [progress/log-2026-11-15.md](progress/log-2026-11-15.md) — build 0.3–0.6, Phase 1 (1.1–1.6)
 - [progress/log-2026-11-16.md](progress/log-2026-11-16.md) — Phase 2 without sign-in
+- [progress/log-2026-11-18.md](progress/log-2026-11-18.md) — analytics, dashboard, wrap-up (paused)
 - [progress/decisions-archive.md](progress/decisions-archive.md) — older "Decisions taken"

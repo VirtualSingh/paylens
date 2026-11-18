@@ -52,6 +52,7 @@ and growing it are in the repo root `CLAUDE.md` ("The vault").
 - [progress/log-2026-11-14.md](progress/log-2026-11-14.md) — planning session; build 0.0–0.2
 - [progress/log-2026-11-15.md](progress/log-2026-11-15.md) — build session 0.3–0.6 (deploy), Phase 1
 - [progress/log-2026-11-16.md](progress/log-2026-11-16.md) — Phase 2 without sign-in: audit, matrix, web app
+- [progress/log-2026-11-18.md](progress/log-2026-11-18.md) — Phase 3 analytics and dashboard; wrap-up paused
 - [progress/decisions-archive.md](progress/decisions-archive.md) — older "Decisions taken"
 
 ## Reference

@@ -114,3 +114,9 @@ Template:
   (`style-src 'unsafe-inline'`). He chose to allow the three runtime styles by SHA-256 hash.
   The agent then found the scroll-lock style varies with scrollbar width, made the page itself
   never scroll so the hash is constant, and added a test that fails on any unlisted style.
+
+## 2026-11-18 · "Wrap all the development as soon as possible", then a pause
+- Pushpendra asked to finish fast; the agent chose to cut rather than rush: read-only pay bands
+  and audit pages last, then everything unbuilt goes to the backlog with a reason.
+- Mid-task he asked to record everything and stop; WIP left uncommitted (one spec red) and
+  described step by step in progress.md and log-2026-11-18.md.
